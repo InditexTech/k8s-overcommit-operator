@@ -12,7 +12,6 @@ path = [
     "Dockerfile",
     "go.mod",
     "go.sum",
-    "internal/**",
 ]
 SPDX-License-Identifier = "Apache-2.0"
 SPDX-FileCopyrightText = "2025 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)"
@@ -31,14 +30,15 @@ SPDX-FileComment = "Documentation"
 [[annotations]]
 path= [
     ".github/**",
-    "hack/**",
-    ".*ignore",
-    "PROJECT",
     ".golangci.yml",
-    "Tiltfile",
-    "repolinter.json",
+    ".*ignore",
     "chart/.helmignore",
     "chart/templates/_*.tpl",
+    "hack/**",
+    "internal/**",
+    "PROJECT",
+    "repolinter.json",
+    "Tiltfile",
 ]
 SPDX-License-Identifier = "Apache-2.0"
 SPDX-FileCopyrightText = "2025 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)"
