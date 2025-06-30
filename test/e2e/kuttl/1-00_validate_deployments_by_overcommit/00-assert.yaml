@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-overcommit-operator
+  namespace: k8s-overcommit
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-overcommit-pod-validating-webhook
+  namespace: k8s-overcommit
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-overcommit-class-validating-webhook
+  namespace: k8s-overcommit
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: k8s-overcommit-issuer
+  namespace: k8s-overcommit
+spec:
+  selfSigned: {}
