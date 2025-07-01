@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: 2025 2025 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
+# SPDX-FileContributor: enriqueavi@inditex.com
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+{{- include "run_checks" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-overcommit-operator
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: k8s-overcommit-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-overcommit-operator
+  template:
+    metadata:
+      labels:
+        app: k8s-overcommit-operator
+        {{- with .Values.deployment.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- with .Values.deployment.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
+      containers:
+      - name: k8s-overcommit
+        command:
+        - /manager
+        args:
+          - --metrics-bind-address=:8080
+          - -metrics-secure=false
+        image: {{$.Values.deployment.image.registry}}/{{$.Values.deployment.image.image}}:{{$.Values.deployment.image.tag}}
+        env:
+        - name: ENABLE_OVERCOMMIT_CONTROLLER
+          value: 'true'
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        resources:
+          requests:
+            memory: {{ $.Values.deployment.resources.requests.memory }}
+            cpu: {{ $.Values.deployment.resources.requests.cpu }}
+          limits:
+            memory: {{ $.Values.deployment.resources.limits.memory }}
+            cpu: {{ $.Values.deployment.resources.limits.cpu }}
