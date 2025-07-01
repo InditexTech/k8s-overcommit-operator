@@ -64,7 +64,7 @@ kubectl apply -f https://github.com/InditexTech/k8s-overcommit-operator/deploy/o
 
 #### 3️⃣ Create the Subscription (Alternative)
 
-You can create yot own or use the one in the route *https://github.com/InditexTech/k8s-overcommit-operator/deploy/subsciption.yaml*
+You can create your own or use the one in the route *https://github.com/InditexTech/k8s-overcommit-operator/deploy/subscription.yaml*
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1

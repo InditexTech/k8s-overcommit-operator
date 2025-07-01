@@ -107,7 +107,7 @@ kubectl apply -f https://github.com/InditexTech/k8s-overcommit-operator/deploy/o
 
 #### 3️⃣ Create the Subscription (Alternative)
 
-You can create yot own or use the one in the route *https://github.com/InditexTech/k8s-overcommit-operator/deploy/subsciption.yaml*
+You can create your own or use the one in the route *https://github.com/InditexTech/k8s-overcommit-operator/deploy/subscription.yaml*
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
@@ -129,7 +129,7 @@ spec:
 ### 🎯 Overcommit Resource
 
 > [!IMPORTANT]
-> **Its a singleton CRD**: only can exists one, and it has to be called **cluster**
+> **It's a singleton CRD**: only can exist one, and it has to be called **cluster**
 
 First, deploy the main `Overcommit` resource named **"cluster"**:
 

@@ -107,7 +107,7 @@ flowchart TD
 ### Overcommit Resource
 
 > [!IMPORTANT]
-> **Its a singleton CRD**: only can exists one, and it has to be called **cluster**
+> **It's a singleton CRD**: only can exist one, and it has to be called **cluster**
 
 The main configuration resource that enables the operator:
 
