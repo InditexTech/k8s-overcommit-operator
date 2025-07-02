@@ -67,7 +67,7 @@ kubectl apply -f https://github.com/InditexTech/k8s-overcommit-operator/deploy/o
 You can create your own or use the one in the route *https://github.com/InditexTech/k8s-overcommit-operator/deploy/subscription.yaml*
 
 ```yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: operators.coreos.com/v1alphav1
 kind: Subscription
 metadata:
   name: k8s-overcommit-operator

@@ -89,7 +89,7 @@ When adding new Custom Resource Definitions (CRDs):
 
 ```bash
 # Create a new API
-operator-sdk create api --group overcommit --version v1alpha1 --kind YourNewResource --resource --controller
+operator-sdk create api --group overcommit --version v1alphav1 --kind YourNewResource --resource --controller
 ```
 
 #### Building and Testing
@@ -167,7 +167,7 @@ k8s-overcommit-operator/
 ├── .github/                          # GitHub workflows and templates
 │   └── workflows/                    # CI/CD pipelines
 ├── api/                              # Kubernetes API definitions
-│   └── v1alpha1/                     # API version v1alpha1
+│   └── v1alphav1/                     # API version v1alphav1
 │       ├── overcommitclass_types.go  # OvercommitClass CRD definition
 │       ├── overcommitclass_webhook.go # Webhook implementation
 │       ├── overcommitclass_webhook_test.go # Webhook tests
@@ -201,7 +201,7 @@ k8s-overcommit-operator/
 │   │   ├── role_binding.yaml       # Role binding
 │   │   └── service_account.yaml    # Service account
 │   ├── samples/                    # Sample Custom Resources
-│   │   └── overcommit_v1alpha1_overcommitclass.yaml
+│   │   └── overcommit_v1alphav1_overcommitclass.yaml
 │   └── webhook/                    # Webhook configuration
 │       ├── kustomization.yaml
 │       ├── manifests.yaml
@@ -242,9 +242,9 @@ k8s-overcommit-operator/
 
 ### Directory Details
 
-#### `/api/v1alpha1/`
+#### `/api/v1alphav1/`
 
-Contains the Kubernetes API definitions for the v1alpha1 version:
+Contains the Kubernetes API definitions for the v1alphav1 version:
 
 - **overcommitclass_types.go**: Defines the OvercommitClass Custom Resource Definition (CRD) structure
 - **overcommitclass_webhook.go**: Implements admission webhooks for validation and mutation
