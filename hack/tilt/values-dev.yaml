@@ -5,7 +5,7 @@
 
 ---
 createClasses: true
-createnamespace: false
+createNamespace: false
 namespace: k8s-overcommit
 
 deployment:

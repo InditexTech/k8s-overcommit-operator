@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-{{ if $.Values.createnamespace }}
+{{ if $.Values.createNamespace }}
 ---
 apiVersion: v1
 kind: Namespace
