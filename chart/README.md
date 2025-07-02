@@ -26,7 +26,7 @@ Overcommitx Helm chart for deploying the Overcommitx Webhook
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | clusterRole.name | string | `"k8s-overcommit-clusterrole"` | Name of the cluster role |
-| createnamespace | bool | `false` | Whether to create the namespace if it does not exist |
+| createNamespace | bool | `false` | Whether to create the namespace if it does not exist |
 | deployment.image | object | `{"image":"operator","registry":"quay.io","repository":"k8s-overcommit","tag":"1.0.0"}` | Image configuration for the deployment |
 | deployment.image.image | string | `"operator"` | Image name |
 | deployment.image.registry | string | `"quay.io"` | Docker registry for the image |

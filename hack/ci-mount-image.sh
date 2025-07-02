@@ -12,7 +12,7 @@ kubectl wait --for=condition=available --timeout=40s deployment/cert-manager-web
 make docker-build IMG=k8s-overcommit/webhook:teste2e
 kind load docker-image k8s-overcommit/webhook:teste2e --name kuttl-cluster
 echo "Mounted image in the Kind cluster, instaling operator"
-helm install k8s-overcommit chart --set createClasses=false --set createnamespace=true --set namespace=k8s-overcommit --set deployment.image.tag=teste2e --set deployment.image.registry=docker.io --set deployment.image.image=k8s-overcommit/webhook
+helm install k8s-overcommit chart --set createClasses=false --set createNamespace=true --set namespace=k8s-overcommit --set deployment.image.tag=teste2e --set deployment.image.registry=docker.io --set deployment.image.image=k8s-overcommit/webhook
 echo "Operator installed, waiting for the deployment to be ready"
 kubectl wait --for=condition=available --timeout=50s deployment/k8s-overcommit-operator -n $(yq eval '.namespace' chart/values.yaml)
 echo "Operator deployment ready, installing the overcommit CR"
