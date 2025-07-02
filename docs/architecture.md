@@ -46,8 +46,8 @@ The **k8s-overcommit Operator** is a Kubernetes-native operator designed to inte
 |-----------|---------|----------|
 | **Overcommit Controller** | Manages main Overcommit resource and deploys OvercommitClass controllers | [`internal/controller/overcommitclass/`](../internal/controller/overcommitclass/) |
 | **OvercommitClass Controller** | Watches OvercommitClass resources and configures webhooks | [`internal/resources/generate_resources_overcommit_class_controller_controller.go`](../internal/resources/generate_resources_overcommit_class_controller_controller.go) |
-| **Pod Mutating Webhook** | Modifies pod resource requests based on overcommit policies | [`api/v1alpha1/overcommitclass_webhook.go`](../internal/webhook/v1alphav1/mutating/pod_webhook.go) |
-| **OvercommitClass Validating Webhook** | Validates OvercommitClass resource specifications | [`internal/webhook/v1alphav1/mutating/pod_webhook.go`](../api/v1alpha1/overcommitclass_webhook.go) |
+| **Pod Mutating Webhook** | Modifies pod resource requests based on overcommit policies | [`api/v1alphav1/overcommitclass_webhook.go`](../internal/webhook/v1alphav1/mutating/pod_webhook.go) |
+| **OvercommitClass Validating Webhook** | Validates OvercommitClass resource specifications | [`internal/webhook/v1alphav1/mutating/pod_webhook.go`](../api/v1alphav1/overcommitclass_webhook.go) |
 | **Pod Validating Webhook** | Validates Pod With Unexisting Class | [`internal/webhook/v1alphav1/validating/pod_webhook.go`](../internal/webhook/v1alphav1/validating/pod_webhook.go) |
 | **Certificate Manager** | Generates and manages TLS certificates for webhooks | [`internal/resources/generate_issuer.go`](../internal/resources/generate_issuer.go) |
 
@@ -112,7 +112,7 @@ flowchart TD
 The main configuration resource that enables the operator:
 
 ```yaml
-apiVersion: overcommit.inditex.dev/v1alpha1
+apiVersion: overcommit.inditex.dev/v1alphav1
 kind: Overcommit
 metadata:
   name: cluster
@@ -135,7 +135,7 @@ spec:
 Defines overcommit policies for different workload types:
 
 ```yaml
-apiVersion: overcommit.inditex.dev/v1alpha1
+apiVersion: overcommit.inditex.dev/v1alphav1
 kind: OvercommitClass
 metadata:
   name: high-density
@@ -186,7 +186,7 @@ webhooks:
 
 ### Webhook Logic Implementation
 
-The webhook implementation in [`api/v1alpha1/overcommitclass_webhook.go`](../api/v1alpha1/overcommitclass_webhook.go) follows this logic:
+The webhook implementation in [`api/v1alphav1/overcommitclass_webhook.go`](../api/v1alphav1/overcommitclass_webhook.go) follows this logic:
 
 1. **Label Resolution**: Check pod → namespace → default class
 2. **Namespace Exclusion**: Apply regex patterns to exclude critical namespaces
@@ -336,7 +336,7 @@ make run ARGS="--zap-log-level=debug"
 ### Development Environment
 
 ```yaml
-apiVersion: overcommit.inditex.dev/v1alpha1
+apiVersion: overcommit.inditex.dev/v1alphav1
 kind: OvercommitClass
 metadata:
   name: development
@@ -350,7 +350,7 @@ spec:
 ### Production Environment
 
 ```yaml
-apiVersion: overcommit.inditex.dev/v1alpha1
+apiVersion: overcommit.inditex.dev/v1alphav1
 kind: OvercommitClass
 metadata:
   name: production

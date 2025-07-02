@@ -5,6 +5,6 @@ metadata:
   namespace: olm
 spec:
   sourceType: grpc
-  image: ghcr.io/inditextech/k8s-overcommit-operator-catalog:1.1.4
+  image: ghcr.io/inditextech/k8s-overcommit-operator-catalog:1.0.1
   displayName: K8s Overcommit Operator Catalog
   publisher: Inditex Tech
