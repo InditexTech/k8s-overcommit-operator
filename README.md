@@ -29,6 +29,8 @@ SPDX-License-Identifier: CC-BY-4.0
 
 [🚀 Quick Start](#-quick-start) • [📖 Documentation](./docs) • [🤝 Contributing](./CONTRIBUTING.md) • [📝 License](./LICENSE)
 
+<img src="./docs/images/logo.png" alt="Logo" width="250" height="350">
+
 </div>
 
 ---

@@ -9,7 +9,7 @@ kind: Overcommit
 metadata:
   name: cluster
 spec:
-  overcommitLabel: {{ $.Values.webhook.overcommitClassLabel }}
+  overcommitLabel: {{ $.Values.overcommit.overcommitClassLabel }}
   labels:
     example.com/label: "true"
   annotations:

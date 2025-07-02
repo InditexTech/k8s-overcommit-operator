@@ -13,7 +13,7 @@ spec:
   cpuOvercommit: 0.1
   memoryOvercommit: 0.8
   isDefault: false
-  excludedNamespaces: "{{ .Values.webhook.excludedNamespaces }}"
+  excludedNamespaces: "{{ .Values.overcommit.excludedNamespaces }}"
   labels:
     example.com/label: "true"
   annotations:
@@ -27,7 +27,7 @@ spec:
   cpuOvercommit: 0.8
   memoryOvercommit: 1
   isDefault: false
-  excludedNamespaces: "{{ .Values.webhook.excludedNamespaces }}"
+  excludedNamespaces: "{{ .Values.overcommit.excludedNamespaces }}"
   labels:
     example.com/label: "true"
   annotations:

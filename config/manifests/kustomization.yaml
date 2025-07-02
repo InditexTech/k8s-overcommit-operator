@@ -26,3 +26,10 @@ resources:
 #    # Update the indices in this path if adding or removing volumes in the manager's Deployment.
 #    - op: remove
 #      path: /spec/template/spec/volumes/0
+patches:
+  - target:
+      group: operators.coreos.com
+      version: v1alpha1
+      kind: ClusterServiceVersion
+      name: k8s-overcommit\.v.*
+    path: patches/icon.yaml
