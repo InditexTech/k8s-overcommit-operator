@@ -52,17 +52,11 @@ The **k8s-overcommit Operator** is a Kubernetes operator designed to intelligent
 
 ## 🚀 Quick Start
 
-> [!IMPORTANT]
-> **Prerequisites**: You need to have **cert-manager** installed in your cluster before deploying the operator.
-
-Choose your preferred installation method:
-
-### 📦 Installation Methods
-
-<details>
-<summary><strong>🎯 Method 1: Helm Installation (Recommended)</strong></summary>
+### 🎯 Method 1: Helm Installation (Recommended)
 
 #### 1️⃣ Clone the Repository
+
+Clone the repository to your local machine:
 
 ```bash
 git clone https://github.com/InditexTech/k8s-overcommit-operator.git
@@ -71,7 +65,7 @@ cd k8s-overcommit-operator
 
 #### 2️⃣ Configure Values
 
-Edit the [`chart/values.yaml`](chart/values.yaml) file to customize your deployment:
+Edit the [`values.yaml`](../chart/values.yaml) file to customize your deployment. Below is an example configuration:
 
 ```yaml
 # Example configuration
@@ -84,35 +78,36 @@ deployment:
 
 #### 3️⃣ Install with Helm
 
+Install the operator using Helm:
+
 ```bash
 helm install k8s-overcommit-operator chart
 ```
 
-</details>
+### 🔧 Method 2: OLM Installation
 
-<details>
-<summary><strong>🔧 Method 2: OLM Installation</strong></summary>
+#### 1️⃣ Install the CatalogSource
 
-#### 1️⃣ Install the catalog source
-
-For OpenShift or clusters with OLM installed:
+For OpenShift or clusters with OLM installed, apply the catalog source:
 
 ```bash
-kubectl apply -f https://github.com/InditexTech/k8s-overcommit-operator/deploy/catalog_source.yaml
+kubectl apply -f https://raw.githubusercontent.com/InditexTech/k8s-overcommit-operator/refs/heads/main/deploy/catalog_source.yaml
 ```
 
-#### 2️⃣ Apply the operatorGroup
+#### 2️⃣ Apply the OperatorGroup
+
+Apply the operator group configuration:
 
 ```bash
-kubectl apply -f https://github.com/InditexTech/k8s-overcommit-operator/deploy/operator_group.yaml
+kubectl apply -f https://raw.githubusercontent.com/InditexTech/k8s-overcommit-operator/refs/heads/main/deploy/operator_group.yaml
 ```
 
 #### 3️⃣ Create the Subscription (Alternative)
 
-You can create your own or use the one in the route *https://github.com/InditexTech/k8s-overcommit-operator/deploy/subscription.yaml*
+You can create your own subscription or use the default [`subscription.yaml`](../deploy/subscription.yaml). Below is an example:
 
 ```yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: operators.coreos.com/v1alphav1
 kind: Subscription
 metadata:
   name: k8s-overcommit-operator
@@ -124,7 +119,20 @@ spec:
   sourceNamespace: olm
 ```
 
-</details>
+Apply the subscription:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/InditexTech/k8s-overcommit-operator/refs/heads/main/deploy/subscription.yaml
+```
+
+#### 4️⃣ Validation
+
+After installation, validate that the operator is running:
+
+```bash
+kubectl get pods -n k8s-overcommit
+```
+
 
 ## 📝 Configuration
 

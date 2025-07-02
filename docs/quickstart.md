@@ -10,7 +10,6 @@ SPDX-License-Identifier: CC-BY-4.0
 > [!IMPORTANT]
 > **Prerequisites**: Ensure **cert-manager** is installed in your cluster before deploying the operator.
 
-
 Choose your preferred installation method:
 
 ## 📦 Installation Methods
