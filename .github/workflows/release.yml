@@ -18,6 +18,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       values_version: ${{ steps.version.outputs.values_version }}
       chart_version: ${{ steps.version.outputs.chart_version }}
+      catalog_version: ${{ steps.version.outputs.catalog_version }}
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -29,6 +30,7 @@ jobs:
           echo "version=$(make print-VERSION | cut -d'=' -f2)" >> $GITHUB_OUTPUT
           echo "values_version=$(yq '.deployment.image.tag' chart/values.yaml)" >> $GITHUB_OUTPUT
           echo "chart_version=$(yq '.appVersion' chart/Chart.yaml)" >> $GITHUB_OUTPUT
+          echo "catalog_version=$(yq '.spec.image' deploy/catalog_source.yaml | cut -d':' -f2)" >> $GITHUB_OUTPUT
           echo $GITHUB_OUTPUT
 
   check:
@@ -42,6 +44,7 @@ jobs:
           echo "values_version: ${{ needs.release.outputs.values_version }}"
           echo "chart_version: ${{ needs.release.outputs.chart_version }}"
           echo "tag_name: ${{ github.event.release.tag_name }}"
+          echo "catalog_version: ${{ needs.release.outputs.catalog_version }}"
 
           if [ "${{ github.event.release.tag_name }}" != "${{ needs.release.outputs.version }}" ]; then
             echo "Version in Makefile does not match release tag"
@@ -55,6 +58,11 @@ jobs:
 
           if [ "${{ github.event.release.tag_name }}" != "${{ needs.release.outputs.chart_version }}" ]; then
             echo "Version in chart/Chart.yaml does not match release tag"
+            exit 1
+          fi
+
+          if [ "${{ github.event.release.tag_name }}" != "${{ needs.release.outputs.catalog_version }}" ]; then
+            echo "Version in deploy/catalog_source.yaml does not match release tag"
             exit 1
           fi
 
