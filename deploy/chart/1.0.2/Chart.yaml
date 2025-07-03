@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 2025 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
+# SPDX-FileContributor: enriqueavi@inditex.com
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+apiVersion: v2
+name: k8s-overcommit-operator
+description: K8s overcommit operator Helm chart for deploying the overcommit operator
+type: application
+version: "1.0.0"
+appVersion: "1.0.2"
+maintainers:
+  - name: Enrique Andrés Villar
+    email: enriqueavi@inditex.dev
+  - name: Javier Terceiro López
+    email: javiertl@inditex.dev
+keywords:
+  - kubernetes
+  - openshift
+  - operator
+  - overcommit
+  - resource-management
+  - cluster-optimization
+  - scheduling
+  - performance
+  - inditex
+sources:
+  - https://github.com/InditexTech/k8s-overcommit-operator
