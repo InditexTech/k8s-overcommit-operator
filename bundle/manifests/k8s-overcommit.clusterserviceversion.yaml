@@ -30,7 +30,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2025-07-03T11:39:06Z"
+    createdAt: "2025-07-03T14:50:58Z"
     operators.operatorframework.io/builder: operator-sdk-v1.40.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: k8s-overcommit.v1.0.2

@@ -66,7 +66,7 @@ func GeneratePodValidatingDeployment(overcommitObject overcommit.Overcommit) *ap
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: overcommitObject.Annotations,
+					Annotations: overcommitObject.Spec.Annotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: os.Getenv("SERVICE_ACCOUNT_NAME"),
@@ -241,7 +241,7 @@ func GenerateOvercommitClassValidatingDeployment(overcommitObject overcommit.Ove
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: overcommitObject.Annotations,
+					Annotations: overcommitObject.Spec.Annotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: os.Getenv("SERVICE_ACCOUNT_NAME"),

@@ -309,6 +309,7 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			occontroller.Spec = updatedDeployment.Spec
 			occontroller.ObjectMeta.Labels = updatedDeployment.ObjectMeta.Labels
 			occontroller.ObjectMeta.Annotations = updatedDeployment.ObjectMeta.Annotations
+			logger.Info("Creating new OvercommitClass Controller deployment")
 			return ctrl.SetControllerReference(overcommit, occontroller, r.Scheme)
 		} else {
 			// Existing deployment, only update specific fields if needed
@@ -320,6 +321,16 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			// Update environment variables if they changed
 			if !envVarsEqual(updatedDeployment.Spec.Template.Spec.Containers[0].Env, occontroller.Spec.Template.Spec.Containers[0].Env) {
 				occontroller.Spec.Template.Spec.Containers[0].Env = updatedDeployment.Spec.Template.Spec.Containers[0].Env
+				updated = true
+			}
+			// Update template annotations if they changed
+			if !annotationsEqual(updatedDeployment.Spec.Template.Annotations, occontroller.Spec.Template.Annotations) {
+				occontroller.Spec.Template.Annotations = updatedDeployment.Spec.Template.Annotations
+				updated = true
+			}
+			// Update template labels if they changed
+			if !labelsEqual(updatedDeployment.Spec.Template.Labels, occontroller.Spec.Template.Labels) {
+				occontroller.Spec.Template.Labels = updatedDeployment.Spec.Template.Labels
 				updated = true
 			}
 			// Only set controller reference if we actually updated something

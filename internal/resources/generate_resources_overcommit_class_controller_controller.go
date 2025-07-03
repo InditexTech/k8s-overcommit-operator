@@ -21,6 +21,13 @@ func GenerateOvercommitClassControllerDeployment(overcommitObject overcommit.Ove
 		labels = make(map[string]string)
 	}
 	labels["app"] = "overcommit-controller"
+
+	// Ensure annotations are properly handled
+	annotations := overcommitObject.Spec.Annotations
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "k8s-overcommit-overcommitclass-controller",
@@ -36,7 +43,7 @@ func GenerateOvercommitClassControllerDeployment(overcommitObject overcommit.Ove
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: overcommitObject.Annotations,
+					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: os.Getenv("SERVICE_ACCOUNT_NAME"),

@@ -290,3 +290,49 @@ func envVarsEqual(a, b []corev1.EnvVar) bool {
 
 	return true
 }
+
+// annotationsEqual compares two annotation maps to see if they're equal
+func annotationsEqual(a, b map[string]string) bool {
+	// Handle nil cases
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	for key, valueA := range a {
+		if valueB, exists := b[key]; !exists || valueA != valueB {
+			return false
+		}
+	}
+
+	return true
+}
+
+// labelsEqual compares two label maps to see if they're equal
+func labelsEqual(a, b map[string]string) bool {
+	// Handle nil cases
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	for key, valueA := range a {
+		if valueB, exists := b[key]; !exists || valueA != valueB {
+			return false
+		}
+	}
+
+	return true
+}
