@@ -44,6 +44,10 @@ func GenerateOvercommitClassControllerDeployment(overcommitObject overcommit.Ove
 						{
 							Name:  "overcommit-controller",
 							Image: os.Getenv("IMAGE_REGISTRY") + "/" + os.Getenv("IMAGE_REPOSITORY") + ":" + os.Getenv("APP_VERSION"),
+							Args: []string{
+								"--metrics-bind-address=:8080",
+								"-metrics-secure=false",
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "ENABLE_OVERCOMMIT_CLASS_CONTROLLER",
@@ -79,7 +83,6 @@ func GenerateOvercommitClassControllerDeployment(overcommitObject overcommit.Ove
 								},
 							},
 							Ports: []corev1.ContainerPort{
-								{ContainerPort: 9443},
 								{ContainerPort: 8080, Name: "metrics", Protocol: corev1.ProtocolTCP},
 							},
 						},

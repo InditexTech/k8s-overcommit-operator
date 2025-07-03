@@ -74,6 +74,10 @@ func GeneratePodValidatingDeployment(overcommitObject overcommit.Overcommit) *ap
 						{
 							Name:  "k8s-overcommit-pod-validating-webhook",
 							Image: os.Getenv("IMAGE_REGISTRY") + "/" + os.Getenv("IMAGE_REPOSITORY") + ":" + os.Getenv("APP_VERSION"),
+							Args: []string{
+								"--metrics-bind-address=:8080",
+								"-metrics-secure=false",
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "ENABLE_POD_VALIDATING_WEBHOOK",
@@ -245,6 +249,10 @@ func GenerateOvercommitClassValidatingDeployment(overcommitObject overcommit.Ove
 						{
 							Name:  "k8s-overcommit-class-validating-webhook",
 							Image: os.Getenv("IMAGE_REGISTRY") + "/" + os.Getenv("IMAGE_REPOSITORY") + ":" + os.Getenv("APP_VERSION"),
+							Args: []string{
+								"--metrics-bind-address=:8080",
+								"-metrics-secure=false",
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "ENABLE_OC_VALIDATING_WEBHOOK",
