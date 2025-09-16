@@ -81,6 +81,10 @@ spec:
                 maximum: 1
                 minimum: 0.0001
                 type: number
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                type: object
               tolerations:
                 items:
                   description: |-
