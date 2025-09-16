@@ -10,11 +10,16 @@ namespace: k8s-overcommit
 createNamespace: true
 createOvercommit: false
 createClasses: false
+
+# -- Configuration for the Overcommit controllers
 overcommit:
   # -- Label of the overcommit class
   overcommitClassLabel: inditex.com/overcommit-class
   excludedNamespaces: ".*(^(openshift|k8s-overcommit|kube).*).*"
+  # -- Tolerations for the deployments created by the overcommit operator
+  tolerations: []
 
+# -- Controller deployment configuration
 deployment:
   # -- Number of replicas for the deployment
   replicas: 1
@@ -41,5 +46,8 @@ deployment:
     example-annotation: example-value
   podLabels:
     example-label: example-value
+  # -- Tolerations for the deployment pods
+  tolerations: []
+
 serviceAccount:
   name: overcommit-sa

@@ -60,3 +60,7 @@ spec:
           limits:
             memory: {{ $.Values.deployment.resources.limits.memory }}
             cpu: {{ $.Values.deployment.resources.limits.cpu }}
+      {{- if .Values.deployment.tolerations }}
+      tolerations:
+      {{- toYaml .Values.deployment.tolerations | nindent 8 }}
+      {{- end }}

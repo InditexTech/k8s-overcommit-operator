@@ -14,4 +14,8 @@ spec:
     example.com/label: "true"
   annotations:
     example.com/annotation: "true"
+  {{- if .Values.overcommit.tolerations }}
+  tolerations:
+  {{- toYaml .Values.overcommit.tolerations | nindent 4 }}
+  {{- end }}
 {{ end }}
