@@ -300,8 +300,7 @@ func GenerateOvercommitClassValidatingDeployment(overcommitObject overcommit.Ove
 							},
 						},
 					},
-					//TODO: parameterize tolerations
-					Tolerations: []corev1.Toleration{},
+					Tolerations: overcommitObject.Spec.Tolerations,
 					Volumes: []corev1.Volume{
 						{
 							Name: "webhook-cert",
