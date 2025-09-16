@@ -97,7 +97,8 @@ func CreateDeployment(class overcommit.OvercommitClass) *appsv1.Deployment {
 							},
 						},
 					},
-					Tolerations: class.Spec.Tolerations,
+					NodeSelector: class.Spec.NodeSelector,
+					Tolerations:  class.Spec.Tolerations,
 					Volumes: []corev1.Volume{
 						{
 							Name: "webhook-tls-secret",

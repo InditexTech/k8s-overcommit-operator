@@ -42,7 +42,7 @@ func TestCreateDeployment(t *testing.T) {
 	}
 }
 
-func TestCreateDeploymentWithTolerations(t *testing.T) {
+func TestCreateDeploymentWithTolerationsAndNodeSelector(t *testing.T) {
 	os.Setenv("POD_NAMESPACE", "test-namespace")
 	os.Setenv("IMAGE_REGISTRY", "test-registry")
 	os.Setenv("IMAGE_REPOSITORY", "test-repo")
@@ -55,6 +55,9 @@ func TestCreateDeploymentWithTolerations(t *testing.T) {
 		Spec: overcommit.OvercommitClassSpec{
 			Labels:      map[string]string{"key": "value"},
 			Annotations: map[string]string{"annotation-key": "annotation-value"},
+			NodeSelector: map[string]string{
+				"disktype": "ssd",
+			},
 			Tolerations: []corev1.Toleration{
 				{
 					Key:      "key1",
@@ -80,6 +83,9 @@ func TestCreateDeploymentWithTolerations(t *testing.T) {
 
 	if deployment.Spec.Template.Spec.Tolerations[0].Key != "key1" {
 		t.Errorf("Expected toleration key 'key1', got '%s'", deployment.Spec.Template.Spec.Tolerations[0].Key)
+	}
+	if val, ok := deployment.Spec.Template.Spec.NodeSelector["disktype"]; !ok || val != "ssd" {
+		t.Errorf("Expected node selector 'disktype: ssd', got '%v'", deployment.Spec.Template.Spec.NodeSelector)
 	}
 }
 

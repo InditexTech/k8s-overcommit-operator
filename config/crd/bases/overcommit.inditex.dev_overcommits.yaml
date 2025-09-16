@@ -52,6 +52,10 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                type: object
               overcommitLabel:
                 minLength: 1
                 type: string
