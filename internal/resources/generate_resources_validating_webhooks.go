@@ -128,6 +128,7 @@ func GeneratePodValidatingDeployment(overcommitObject overcommit.Overcommit) *ap
 							},
 						},
 					},
+					Tolerations: overcommitObject.Spec.Tolerations,
 					Volumes: []corev1.Volume{
 						{
 							Name: "webhook-cert",
@@ -299,6 +300,8 @@ func GenerateOvercommitClassValidatingDeployment(overcommitObject overcommit.Ove
 							},
 						},
 					},
+					//TODO: parameterize tolerations
+					Tolerations: []corev1.Toleration{},
 					Volumes: []corev1.Volume{
 						{
 							Name: "webhook-cert",
