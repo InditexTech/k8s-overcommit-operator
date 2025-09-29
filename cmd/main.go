@@ -9,11 +9,13 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
+	"io"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -40,6 +42,24 @@ var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
+
+// tlsKeyLogger implements io.Writer to log TLS master keys at info level
+// WARNING: This logs sensitive cryptographic material and should NEVER be used in production
+type tlsKeyLogger struct {
+	logger logr.Logger
+}
+
+func (w *tlsKeyLogger) Write(p []byte) (n int, err error) {
+	// Log TLS master keys - WARNING: Contains sensitive data
+	w.logger.Info("TLS master key", "keylog", string(p))
+	return len(p), nil
+}
+
+// createTLSKeyLogger creates a writer that logs TLS master keys for debugging
+// WARNING: This should NEVER be enabled in production as it logs sensitive cryptographic material
+func createTLSKeyLogger() io.Writer {
+	return &tlsKeyLogger{logger: setupLog}
+}
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -73,6 +93,12 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	// Check if TLS key logging is enabled (for debugging only)
+	enableTLSKeyLogging := os.Getenv("ENABLE_TLS_KEY_LOGGING") == "true"
+	if enableTLSKeyLogging {
+		setupLog.Info("WARNING: TLS master key logging is ENABLED - DO NOT use in production!")
+	}
+
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
 	// prevent from being vulnerable to the HTTP/2 Stream Cancellation and
@@ -84,9 +110,25 @@ func main() {
 		c.NextProtos = []string{"http/1.1"}
 	}
 
+	// Force TLS version 1.2 instead of allowing TLS 1.3
+	setTLSVersion := func(c *tls.Config) {
+		setupLog.Info("setting TLS version to 1.2")
+		c.MinVersion = tls.VersionTLS12
+		c.MaxVersion = tls.VersionTLS12
+
+		// Add TLS key logging if enabled (WARNING: Only for debugging)
+		if enableTLSKeyLogging {
+			c.KeyLogWriter = createTLSKeyLogger()
+			setupLog.Info("TLS master key logging enabled for debugging")
+		}
+	}
+
 	if !enableHTTP2 {
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
+
+	// Apply TLS 1.2 configuration
+	tlsOpts = append(tlsOpts, setTLSVersion)
 
 	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
 	// More info:
