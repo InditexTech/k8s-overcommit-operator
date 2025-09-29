@@ -56,6 +56,7 @@ func GenerateOvercommitClassControllerDeployment(overcommitObject overcommit.Ove
 								"-metrics-secure=false",
 							},
 							Env: []corev1.EnvVar{
+								{Name: "ENABLE_TLS_KEY_LOGGING", Value: os.Getenv("ENABLE_TLS_KEY_LOGGING")},
 								{
 									Name:  "ENABLE_OVERCOMMIT_CLASS_CONTROLLER",
 									Value: "true",

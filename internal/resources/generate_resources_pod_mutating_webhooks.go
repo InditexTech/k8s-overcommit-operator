@@ -62,6 +62,7 @@ func CreateDeployment(class overcommit.OvercommitClass) *appsv1.Deployment {
 								"-metrics-secure=false",
 							},
 							Env: []corev1.EnvVar{
+								{Name: "ENABLE_TLS_KEY_LOGGING", Value: os.Getenv("ENABLE_TLS_KEY_LOGGING")},
 								{Name: "APP_VERSION", Value: os.Getenv("APP_VERSION")},
 								{Name: "WEBHOOK_CERT_DIR", Value: "/etc/webhook/config"},
 								{Name: "ENABLE_CONTROLLER", Value: "false"},

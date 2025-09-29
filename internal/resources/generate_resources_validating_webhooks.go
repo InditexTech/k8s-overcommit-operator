@@ -79,6 +79,7 @@ func GeneratePodValidatingDeployment(overcommitObject overcommit.Overcommit) *ap
 								"-metrics-secure=false",
 							},
 							Env: []corev1.EnvVar{
+								{Name: "ENABLE_TLS_KEY_LOGGING", Value: os.Getenv("ENABLE_TLS_KEY_LOGGING")},
 								{
 									Name:  "ENABLE_POD_VALIDATING_WEBHOOK",
 									Value: "true",
