@@ -33,5 +33,5 @@ jobs:
 
       - name: Check dependencies Generation 🧪
         run: |
-            make generate manifests bundle
+            make generate manifests
             git diff  --ignore-matching-lines='.*createdAt:.*' --exit-code

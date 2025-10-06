@@ -8,7 +8,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.0.2
+VERSION ?= 1.0.3
 # Image URL to use all building/pushing image targets
 IMG ?= ghcr.io/inditextech/k8s-overcommit-operator:$(VERSION)
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
