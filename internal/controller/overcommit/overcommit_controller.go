@@ -174,6 +174,16 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				overcommitClassDeployment.Spec.Template.Labels = updatedDeployment.Spec.Template.Labels
 				updated = true
 			}
+			// Update nodeSelector if it changed
+			if !mapsEqual(updatedDeployment.Spec.Template.Spec.NodeSelector, overcommitClassDeployment.Spec.Template.Spec.NodeSelector) {
+				overcommitClassDeployment.Spec.Template.Spec.NodeSelector = updatedDeployment.Spec.Template.Spec.NodeSelector
+				updated = true
+			}
+			// Update tolerations if they changed
+			if !utils.TolerationsEqual(ctx, updatedDeployment.Spec.Template.Spec.Tolerations, overcommitClassDeployment.Spec.Template.Spec.Tolerations) {
+				overcommitClassDeployment.Spec.Template.Spec.Tolerations = updatedDeployment.Spec.Template.Spec.Tolerations
+				updated = true
+			}
 			// Only set controller reference if we actually updated something
 			if updated {
 				return ctrl.SetControllerReference(overcommit, overcommitClassDeployment, r.Scheme)
@@ -270,6 +280,16 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				validatingPodDeployment.Spec.Template.Labels = updatedDeployment.Spec.Template.Labels
 				updated = true
 			}
+			// Update nodeSelector if it changed
+			if !mapsEqual(updatedDeployment.Spec.Template.Spec.NodeSelector, validatingPodDeployment.Spec.Template.Spec.NodeSelector) {
+				validatingPodDeployment.Spec.Template.Spec.NodeSelector = updatedDeployment.Spec.Template.Spec.NodeSelector
+				updated = true
+			}
+			// Update tolerations if they changed
+			if !utils.TolerationsEqual(ctx, updatedDeployment.Spec.Template.Spec.Tolerations, validatingPodDeployment.Spec.Template.Spec.Tolerations) {
+				validatingPodDeployment.Spec.Template.Spec.Tolerations = updatedDeployment.Spec.Template.Spec.Tolerations
+				updated = true
+			}
 			// Only set controller reference if we actually updated something
 			if updated {
 				return ctrl.SetControllerReference(overcommit, validatingPodDeployment, r.Scheme)
@@ -351,6 +371,16 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			// Update template labels if they changed
 			if !mapsEqual(updatedDeployment.Spec.Template.Labels, occontroller.Spec.Template.Labels) {
 				occontroller.Spec.Template.Labels = updatedDeployment.Spec.Template.Labels
+				updated = true
+			}
+			// Update nodeSelector if it changed
+			if !mapsEqual(updatedDeployment.Spec.Template.Spec.NodeSelector, occontroller.Spec.Template.Spec.NodeSelector) {
+				occontroller.Spec.Template.Spec.NodeSelector = updatedDeployment.Spec.Template.Spec.NodeSelector
+				updated = true
+			}
+			// Update tolerations if they changed
+			if !utils.TolerationsEqual(ctx, updatedDeployment.Spec.Template.Spec.Tolerations, occontroller.Spec.Template.Spec.Tolerations) {
+				occontroller.Spec.Template.Spec.Tolerations = updatedDeployment.Spec.Template.Spec.Tolerations
 				updated = true
 			}
 			// Only set controller reference if we actually updated something
