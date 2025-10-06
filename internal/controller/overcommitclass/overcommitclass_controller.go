@@ -158,7 +158,7 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	certificate := resources.CreateCertificate(overcommitClass.Name, *service)
 	webhookConfig := resources.CreateMutatingWebhookConfiguration(*overcommitClass, *service, *certificate, label)
 
-	// Reconcile Deployment with improved logic
+	// Reconcile Deployment
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, deployment, func() error {
 		// Regenerate the desired deployment spec
 		updatedDeployment := resources.CreateDeployment(*overcommitClass)
@@ -214,7 +214,7 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	// Reconcile Service with improved logic
+	// Reconcile Service
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 		// Regenerate the desired service spec
 		updatedService := resources.CreateService(overcommitClass.Name)
@@ -272,7 +272,7 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	// Reconcile Certificate with improved logic
+	// Reconcile Certificate
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, certificate, func() error {
 		// Regenerate the desired certificate spec
 		updatedCertificate := resources.CreateCertificate(overcommitClass.Name, *service)
@@ -331,7 +331,7 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	// Reconcile MutatingWebhookConfiguration with improved logic
+	// Reconcile MutatingWebhookConfiguration
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, webhookConfig, func() error {
 		// Regenerate the desired webhook configuration
 		updatedWebhookConfig := resources.CreateMutatingWebhookConfiguration(*overcommitClass, *service, *certificate, label)
