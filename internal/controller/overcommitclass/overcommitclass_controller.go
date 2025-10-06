@@ -13,11 +13,7 @@ import (
 
 	resources "github.com/InditexTech/k8s-overcommit-operator/internal/resources"
 	"github.com/InditexTech/k8s-overcommit-operator/internal/utils"
-	certmanager "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,8 +52,115 @@ func (r *OvercommitClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// cleanupResources ensures that all resources associated with the OvercommitClass CR are deleted.
+func (r *OvercommitClassReconciler) cleanupResources(ctx context.Context, overcommitClass *overcommit.OvercommitClass) error {
+	logger := log.FromContext(ctx)
+	logger.Info("Cleaning up resources associated with OvercommitClass CR", "name", overcommitClass.Name)
+
+	// Delete Deployment
+	deployment := resources.CreateDeployment(*overcommitClass)
+	if deployment != nil {
+		err := r.Delete(ctx, deployment)
+		if err != nil && client.IgnoreNotFound(err) != nil {
+			logger.Error(err, "Failed to delete Deployment")
+			return err
+		}
+	}
+
+	// Delete Service
+	service := resources.CreateService(overcommitClass.Name)
+	if service != nil {
+		err := r.Delete(ctx, service)
+		if err != nil && client.IgnoreNotFound(err) != nil {
+			logger.Error(err, "Failed to delete Service")
+			return err
+		}
+	}
+
+	// Delete Certificate
+	certificate := resources.CreateCertificate(overcommitClass.Name, *service)
+	if certificate != nil {
+		err := r.Delete(ctx, certificate)
+		if err != nil && client.IgnoreNotFound(err) != nil {
+			logger.Error(err, "Failed to delete Certificate")
+			return err
+		}
+	}
+
+	// Delete MutatingWebhookConfiguration
+	label, err := utils.GetOvercommitLabel(ctx, r.Client)
+	if err != nil {
+		logger.Error(err, "Failed to get Overcommit label")
+		return err
+	}
+
+	webhookConfig := resources.CreateMutatingWebhookConfiguration(*overcommitClass, *service, *certificate, label)
+	if webhookConfig != nil {
+		err := r.Delete(ctx, webhookConfig)
+		if err != nil && client.IgnoreNotFound(err) != nil {
+			logger.Error(err, "Failed to delete MutatingWebhookConfiguration")
+			return err
+		}
+	}
+
+	logger.Info("Successfully cleaned up resources for OvercommitClass", "name", overcommitClass.Name)
+	return nil
+}
+
+// envVarsEqual compares two slices of environment variables to see if they're equal
+func envVarsEqual(a, b []corev1.EnvVar) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	// Create maps for easier comparison
+	mapA := make(map[string]string)
+	mapB := make(map[string]string)
+
+	for _, env := range a {
+		mapA[env.Name] = env.Value
+	}
+
+	for _, env := range b {
+		mapB[env.Name] = env.Value
+	}
+
+	// Compare maps
+	for key, valueA := range mapA {
+		if valueB, exists := mapB[key]; !exists || valueA != valueB {
+			return false
+		}
+	}
+
+	return true
+}
+
+// mapsEqual compares two string maps to see if they're equal
+func mapsEqual(a, b map[string]string) bool {
+	// Handle nil cases
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	for key, valueA := range a {
+		if valueB, exists := b[key]; !exists || valueA != valueB {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+	logger.Info("Starting reconciliation", "name", req.Name, "namespace", req.Namespace, "time", time.Now().Format("15:04:05"))
 
 	label, err := utils.GetOvercommitLabel(ctx, r.Client)
 	if err != nil {
@@ -69,27 +172,48 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	err = r.Get(ctx, req.NamespacedName, overcommitClass)
 	if err != nil {
-		logger.Info("Deleting resources for the class", "name", req.Name)
-		err := ensureResourceDeleted(ctx, r.Client, &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: req.Name + "-webhook-deployment", Namespace: "k8s-overcommit"}})
+		if client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
+		}
+		// CR not found, nothing to do
+		logger.Info("OvercommitClass CR not found, skipping reconciliation")
+		return ctrl.Result{}, nil
+	}
+
+	// Check if the CR is being deleted
+	if !overcommitClass.ObjectMeta.DeletionTimestamp.IsZero() {
+		logger.Info("OvercommitClass CR is being deleted, cleaning up resources")
+
+		// Clean up resources
+		err := r.cleanupResources(ctx, overcommitClass)
 		if err != nil {
-			logger.Error(err, "Failed to delete Deployment")
+			logger.Error(err, "Failed to clean up resources")
+			return ctrl.Result{}, err
 		}
-		err = ensureResourceDeleted(ctx, r.Client, &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: req.Name + "-webhook-service", Namespace: "k8s-overcommit"}})
+
+		// Remove finalizer if cleanup is successful
+		controllerutil.RemoveFinalizer(overcommitClass, "overcommitclass.finalizer")
+		err = r.Update(ctx, overcommitClass)
 		if err != nil {
-			logger.Error(err, "Failed to delete Service")
+			logger.Error(err, "Failed to remove finalizer")
+			return ctrl.Result{}, err
 		}
-		err = ensureResourceDeleted(ctx, r.Client, &certmanager.Certificate{ObjectMeta: metav1.ObjectMeta{Name: req.Name + "-webhook-certificate", Namespace: "k8s-overcommit"}})
+
+		return ctrl.Result{}, nil
+	}
+
+	// Add finalizer if not present
+	if !controllerutil.ContainsFinalizer(overcommitClass, "overcommitclass.finalizer") {
+		logger.Info("Adding finalizer to OvercommitClass CR")
+		controllerutil.AddFinalizer(overcommitClass, "overcommitclass.finalizer")
+		err = r.Update(ctx, overcommitClass)
 		if err != nil {
-			logger.Error(err, "Failed to delete Certificate")
+			logger.Error(err, "Failed to add finalizer")
+			return ctrl.Result{}, err
 		}
-		err = ensureResourceDeleted(ctx, r.Client, &admissionv1.MutatingWebhookConfiguration{ObjectMeta: metav1.ObjectMeta{Name: req.Name + "overcommit-webhook", Namespace: "k8s-overcommit"}})
-		if err != nil {
-			logger.Error(err, "Failed to delete MutatingWebhookConfiguration")
-		}
-		if getTotalClasses(ctx, r.Client) != nil {
-			logger.Error(err, "Failed to update metrics")
-		}
-		return ctrl.Result{}, err
+		// Return early to trigger a new reconciliation with the updated object
+		logger.Info("Finalizer added, requeuing reconciliation")
+		return ctrl.Result{}, nil
 	}
 	// Check if the OvercommitClass has the correct owner reference
 	overcommitResource, err := utils.GetOvercommit(ctx, r.Client)
@@ -133,51 +257,110 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	logger.Info("Reconciling resources for the class", "name", overcommitClass)
+	logger.Info("Reconciling resources for the class", "name", overcommitClass.Name)
+
+	// Create resource definitions
 	deployment := resources.CreateDeployment(*overcommitClass)
 	service := resources.CreateService(overcommitClass.Name)
 	certificate := resources.CreateCertificate(overcommitClass.Name, *service)
 	webhookConfig := resources.CreateMutatingWebhookConfiguration(*overcommitClass, *service, *certificate, label)
 
-	// Use CreateOrUpdate for each resource
+	// Reconcile Deployment with improved logic
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, deployment, func() error {
-		// Update the deployment spec if needed
+		// Regenerate the desired deployment spec
 		updatedDeployment := resources.CreateDeployment(*overcommitClass)
-		deployment.Spec = updatedDeployment.Spec
-		return controllerutil.SetControllerReference(overcommitClass, deployment, r.Scheme)
+
+		// Only update if there are actual differences
+		if deployment.CreationTimestamp.IsZero() {
+			// New deployment, set everything
+			deployment.Spec = updatedDeployment.Spec
+			deployment.ObjectMeta.Labels = updatedDeployment.ObjectMeta.Labels
+			deployment.ObjectMeta.Annotations = updatedDeployment.ObjectMeta.Annotations
+			return controllerutil.SetControllerReference(overcommitClass, deployment, r.Scheme)
+		} else {
+			// Existing deployment, only update specific fields if needed
+			updated := false
+
+			// Check if image changed
+			if len(updatedDeployment.Spec.Template.Spec.Containers) > 0 && len(deployment.Spec.Template.Spec.Containers) > 0 {
+				if updatedDeployment.Spec.Template.Spec.Containers[0].Image != deployment.Spec.Template.Spec.Containers[0].Image {
+					deployment.Spec.Template.Spec.Containers[0].Image = updatedDeployment.Spec.Template.Spec.Containers[0].Image
+					updated = true
+				}
+			}
+
+			// Update environment variables if they changed
+			if len(updatedDeployment.Spec.Template.Spec.Containers) > 0 && len(deployment.Spec.Template.Spec.Containers) > 0 {
+				if !envVarsEqual(updatedDeployment.Spec.Template.Spec.Containers[0].Env, deployment.Spec.Template.Spec.Containers[0].Env) {
+					deployment.Spec.Template.Spec.Containers[0].Env = updatedDeployment.Spec.Template.Spec.Containers[0].Env
+					updated = true
+				}
+			}
+
+			// Update template annotations if they changed
+			if !mapsEqual(updatedDeployment.Spec.Template.Annotations, deployment.Spec.Template.Annotations) {
+				deployment.Spec.Template.Annotations = updatedDeployment.Spec.Template.Annotations
+				updated = true
+			}
+
+			// Update template labels if they changed
+			if !mapsEqual(updatedDeployment.Spec.Template.Labels, deployment.Spec.Template.Labels) {
+				deployment.Spec.Template.Labels = updatedDeployment.Spec.Template.Labels
+				updated = true
+			}
+
+			// Only set controller reference if we actually updated something
+			if updated {
+				return controllerutil.SetControllerReference(overcommitClass, deployment, r.Scheme)
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		logger.Error(err, "Failed to create or update Deployment")
 		return ctrl.Result{}, err
 	}
 
+	// Reconcile Service with improved logic
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
-		// Update the service spec if needed
-		updatedService := resources.CreateService(overcommitClass.Name)
-		service.Spec = updatedService.Spec
-		return controllerutil.SetControllerReference(overcommitClass, service, r.Scheme)
+		// Only update spec if this is a new resource
+		if service.CreationTimestamp.IsZero() {
+			updatedService := resources.CreateService(overcommitClass.Name)
+			service.Spec = updatedService.Spec
+			return controllerutil.SetControllerReference(overcommitClass, service, r.Scheme)
+		}
+		return nil
 	})
 	if err != nil {
 		logger.Error(err, "Failed to create or update Service")
 		return ctrl.Result{}, err
 	}
 
+	// Reconcile Certificate with improved logic
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, certificate, func() error {
-		// Update the certificate spec if needed
-		updatedCertificate := resources.CreateCertificate(overcommitClass.Name, *service)
-		certificate.Spec = updatedCertificate.Spec
-		return controllerutil.SetControllerReference(overcommitClass, certificate, r.Scheme)
+		// Only update spec if this is a new resource
+		if certificate.CreationTimestamp.IsZero() {
+			updatedCertificate := resources.CreateCertificate(overcommitClass.Name, *service)
+			certificate.Spec = updatedCertificate.Spec
+			return controllerutil.SetControllerReference(overcommitClass, certificate, r.Scheme)
+		}
+		return nil
 	})
 	if err != nil {
 		logger.Error(err, "Failed to create or update Certificate")
 		return ctrl.Result{}, err
 	}
 
+	// Reconcile MutatingWebhookConfiguration with improved logic
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, webhookConfig, func() error {
-		// Update the webhook configuration spec if needed
-		updatedWebhookConfig := resources.CreateMutatingWebhookConfiguration(*overcommitClass, *service, *certificate, label)
-		webhookConfig.Webhooks = updatedWebhookConfig.Webhooks
-		return controllerutil.SetControllerReference(overcommitClass, webhookConfig, r.Scheme)
+		// Only update webhooks if this is a new resource
+		if webhookConfig.CreationTimestamp.IsZero() {
+			updatedWebhookConfig := resources.CreateMutatingWebhookConfiguration(*overcommitClass, *service, *certificate, label)
+			webhookConfig.Annotations = updatedWebhookConfig.Annotations
+			webhookConfig.Webhooks = updatedWebhookConfig.Webhooks
+			return controllerutil.SetControllerReference(overcommitClass, webhookConfig, r.Scheme)
+		}
+		return nil
 	})
 	if err != nil {
 		logger.Error(err, "Failed to create or update MutatingWebhookConfiguration")
@@ -195,6 +378,8 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	// Only requeue periodically for status checks, not immediately
+	logger.Info("Reconciliation completed successfully", "nextReconcile", "10 seconds", "time", time.Now().Format("15:04:05"))
 	return ctrl.Result{
 		RequeueAfter: 10 * time.Second,
 	}, nil
