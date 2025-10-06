@@ -11,5 +11,3 @@ spec:
   memoryOvercommit: 0.5
   isDefault: false
   excludedNamespaces: ".*(^(openshift|k8s-overcommit|kube).*).*"
-  nodeSelector: {}
-  tolerations: []
