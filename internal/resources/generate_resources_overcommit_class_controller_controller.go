@@ -94,6 +94,8 @@ func GenerateOvercommitClassControllerDeployment(overcommitObject overcommit.Ove
 							},
 						},
 					},
+					NodeSelector: overcommitObject.Spec.NodeSelector,
+					Tolerations:  overcommitObject.Spec.Tolerations,
 				},
 			},
 		},

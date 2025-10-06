@@ -42,6 +42,53 @@ func TestCreateDeployment(t *testing.T) {
 	}
 }
 
+func TestCreateDeploymentWithTolerationsAndNodeSelector(t *testing.T) {
+	os.Setenv("POD_NAMESPACE", "test-namespace")
+	os.Setenv("IMAGE_REGISTRY", "test-registry")
+	os.Setenv("IMAGE_REPOSITORY", "test-repo")
+	os.Setenv("APP_VERSION", "v1.0.0")
+
+	class := overcommit.OvercommitClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-class",
+		},
+		Spec: overcommit.OvercommitClassSpec{
+			Labels:      map[string]string{"key": "value"},
+			Annotations: map[string]string{"annotation-key": "annotation-value"},
+			NodeSelector: map[string]string{
+				"disktype": "ssd",
+			},
+			Tolerations: []corev1.Toleration{
+				{
+					Key:      "key1",
+					Operator: corev1.TolerationOpExists,
+				},
+			},
+		},
+	}
+
+	deployment := CreateDeployment(class)
+
+	if deployment.ObjectMeta.Name != "test-class-overcommit-webhook" {
+		t.Errorf("Expected deployment name 'test-class-overcommit-webhook', got '%s'", deployment.ObjectMeta.Name)
+	}
+
+	if deployment.Spec.Replicas == nil || *deployment.Spec.Replicas != 1 {
+		t.Errorf("Expected replicas to be 1, got '%v'", deployment.Spec.Replicas)
+	}
+
+	if len(deployment.Spec.Template.Spec.Tolerations) != 1 {
+		t.Errorf("Expected 1 toleration, got '%d'", len(deployment.Spec.Template.Spec.Tolerations))
+	}
+
+	if deployment.Spec.Template.Spec.Tolerations[0].Key != "key1" {
+		t.Errorf("Expected toleration key 'key1', got '%s'", deployment.Spec.Template.Spec.Tolerations[0].Key)
+	}
+	if val, ok := deployment.Spec.Template.Spec.NodeSelector["disktype"]; !ok || val != "ssd" {
+		t.Errorf("Expected node selector 'disktype: ssd', got '%v'", deployment.Spec.Template.Spec.NodeSelector)
+	}
+}
+
 func TestCreateService(t *testing.T) {
 	os.Setenv("POD_NAMESPACE", "test-namespace")
 

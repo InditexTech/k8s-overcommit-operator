@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/inditextech/k8s-overcommit-operator
-  newTag: 1.0.3
+  newTag: 1.1.0
