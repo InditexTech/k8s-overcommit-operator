@@ -1,9 +1,14 @@
+# SPDX-FileCopyrightText: 2025 2025 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
+# SPDX-FileContributor: enriqueavi@inditex.com
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
-  creationTimestamp: null
   name: overcommitclasses.overcommit.inditex.dev
 spec:
   group: overcommit.inditex.dev
@@ -202,9 +207,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: null
-  storedVersions: null
