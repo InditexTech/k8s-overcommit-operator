@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2025 2025 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
+# SPDX-FileContributor: enriqueavi@inditex.com
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# -- The namespace to deploy the resources
+namespace: k8s-overcommit
+# -- Whether to create the namespace if it does not exist
+createNamespace: true
+createOvercommit: false
+createClasses: false
+overcommit:
+  # -- Label of the overcommit class
+  overcommitClassLabel: inditex.com/overcommit-class
+  excludedNamespaces: ".*(^(openshift|k8s-overcommit|kube).*).*"
+
+deployment:
+  # -- Number of replicas for the deployment
+  replicas: 1
+  # -- Image configuration for the deployment
+  image:
+    # -- Docker registry for the image
+    registry: ghcr.io
+    # -- Image name
+    image: inditextech/k8s-overcommit-operator
+    # -- Image tag
+    tag: 1.0.3
+  resources:
+    requests:
+      # -- CPU request for the container
+      cpu: "250m"
+      # -- Memory request for the container
+      memory: "64Mi"
+    limits:
+      # -- CPU limit for the container
+      cpu: "500m"
+      # -- Memory limit for the container
+      memory: "1Gi"
+  podAnnotations:
+    example-annotation: example-value
+  podLabels:
+    example-label: example-value
+serviceAccount:
+  name: overcommit-sa
