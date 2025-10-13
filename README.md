@@ -144,7 +144,7 @@ kubectl get pods -n k8s-overcommit
 First, deploy the main `Overcommit` resource named **"cluster"**:
 
 ```yaml
-apiVersion: overcommit.inditex.dev/v1alpha1
+apiVersion: overcommit.inditex.dev/v1alphav1
 kind: Overcommit
 metadata:
   name: cluster
@@ -161,7 +161,7 @@ spec:
 Define overcommit classes for different workload types:
 
 ```yaml
-apiVersion: overcommit.inditex.dev/v1alpha1
+apiVersion: overcommit.inditex.dev/v1alphav1
 kind: OvercommitClass
 metadata:
   name: high
