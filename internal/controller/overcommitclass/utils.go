@@ -224,6 +224,22 @@ func webhookChanged(updated, current interface{}) bool {
 		}
 	}
 
+	// Compare MatchConditions (including CEL expressions for namespace exclusion)
+	if len(updatedWebhook.MatchConditions) != len(currentWebhook.MatchConditions) {
+		return true
+	}
+
+	for i, updatedCondition := range updatedWebhook.MatchConditions {
+		if i >= len(currentWebhook.MatchConditions) {
+			return true
+		}
+		currentCondition := currentWebhook.MatchConditions[i]
+		if updatedCondition.Name != currentCondition.Name ||
+			updatedCondition.Expression != currentCondition.Expression {
+			return true
+		}
+	}
+
 	// If we reach here, they're likely the same
 	return false
 }
