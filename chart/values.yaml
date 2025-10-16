@@ -32,7 +32,7 @@ deployment:
     # -- Image name
     image: inditextech/k8s-overcommit-operator
     # -- Image tag
-    tag: 1.1.0
+    tag: 1.1.1
   resources:
     requests:
       # -- CPU request for the container
