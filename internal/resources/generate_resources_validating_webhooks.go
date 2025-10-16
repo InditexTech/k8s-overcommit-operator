@@ -390,7 +390,7 @@ func GenerateOvercommitClassValidatingWebhookConfiguration(deployment appsv1.Dep
 				},
 				Rules: []admissionv1.RuleWithOperations{
 					{
-						Operations: []admissionv1.OperationType{"CREATE", "UPDATE", "DELETE"},
+						Operations: []admissionv1.OperationType{"CREATE", "UPDATE"},
 						Rule: admissionv1.Rule{
 							APIGroups:   []string{"overcommit.inditex.dev"},
 							APIVersions: []string{"v1alphav1"},

@@ -65,47 +65,36 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, nil
 	}
 
-	// Check if the CR is being deleted
-	if !overcommit.ObjectMeta.DeletionTimestamp.IsZero() {
-		logger.Info("Overcommit CR is being deleted, cleaning up resources")
-
-		// Clean up resources
-		err := r.cleanupResources(ctx, overcommit)
-		if err != nil {
-			logger.Error(err, "Failed to clean up resources")
-			return ctrl.Result{}, err
+	// Migration: Remove legacy finalizers from previous versions
+	// Previous versions of this operator added finalizers to CRs for manual cleanup.
+	// To ensure smooth upgrades, we automatically remove any legacy finalizers
+	// so that CRs created before this change can be deleted normally.
+	legacyFinalizers := []string{"overcommit.finalizer", "webhook.finalizer"}
+	finalizerRemoved := false
+	for _, legacyFinalizer := range legacyFinalizers {
+		if controllerutil.ContainsFinalizer(overcommit, legacyFinalizer) {
+			logger.Info("Removing legacy finalizer during migration", "finalizer", legacyFinalizer)
+			controllerutil.RemoveFinalizer(overcommit, legacyFinalizer)
+			finalizerRemoved = true
 		}
-
-		// Remove finalizer if cleanup is successful
-		controllerutil.RemoveFinalizer(overcommit, "overcommit.finalizer")
-		err = r.Update(ctx, overcommit)
-		if err != nil {
-			logger.Error(err, "Failed to remove finalizer")
-			return ctrl.Result{}, err
-		}
-
-		return ctrl.Result{}, nil
 	}
 
-	// Add finalizer if not present
-	if !controllerutil.ContainsFinalizer(overcommit, "overcommit.finalizer") {
-		logger.Info("Adding finalizer to Overcommit CR")
-		controllerutil.AddFinalizer(overcommit, "overcommit.finalizer")
+	// If we removed any legacy finalizers, update the object and requeue
+	if finalizerRemoved {
 		err = r.Update(ctx, overcommit)
 		if err != nil {
-			logger.Error(err, "Failed to add finalizer")
+			logger.Error(err, "Failed to remove legacy finalizers")
 			return ctrl.Result{}, err
 		}
-		// Return early to trigger a new reconciliation with the updated object
-		logger.Info("Finalizer added, requeuing reconciliation")
-		return ctrl.Result{}, nil
+		logger.Info("Legacy finalizers removed, requeuing reconciliation")
+		return ctrl.Result{RequeueAfter: time.Second * 1}, nil
 	}
 
 	// Reconcile Issuer
 	issuer := resources.GenerateIssuer()
 	if issuer == nil {
 		logger.Error(nil, "Generated issuer is nil")
-		return ctrl.Result{}, fmt.Errorf("Generated issuer is nil")
+		return ctrl.Result{}, fmt.Errorf("generated issuer is nil")
 	}
 
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, issuer, func() error {
@@ -393,6 +382,12 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	})
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	// Update the status of all resources
+	if err := r.updateOvercommitStatusSafely(ctx); err != nil {
+		logger.Error(err, "Failed to update Overcommit status")
+		// Don't fail the reconciliation for status update errors
 	}
 
 	// Only requeue periodically for status checks, not immediately

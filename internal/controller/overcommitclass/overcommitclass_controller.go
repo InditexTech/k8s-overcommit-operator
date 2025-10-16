@@ -73,41 +73,22 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	// Check if the CR is being deleted
-	if !overcommitClass.ObjectMeta.DeletionTimestamp.IsZero() {
-		logger.Info("OvercommitClass CR is being deleted, cleaning up resources")
-
-		// Clean up resources
-		err := r.cleanupResources(ctx, overcommitClass)
-		if err != nil {
-			logger.Error(err, "Failed to clean up resources")
-			return ctrl.Result{}, err
-		}
-
-		// Remove finalizer if cleanup is successful
+	// Migration: Remove legacy finalizer from previous versions
+	// Previous versions of this operator added finalizers to OvercommitClass CRs for manual cleanup.
+	// To ensure smooth upgrades, we automatically remove any legacy finalizer
+	// so that CRs created before this change can be deleted normally.
+	if controllerutil.ContainsFinalizer(overcommitClass, "overcommitclass.finalizer") {
+		logger.Info("Removing legacy finalizer during migration", "finalizer", "overcommitclass.finalizer")
 		controllerutil.RemoveFinalizer(overcommitClass, "overcommitclass.finalizer")
 		err = r.Update(ctx, overcommitClass)
 		if err != nil {
-			logger.Error(err, "Failed to remove finalizer")
+			logger.Error(err, "Failed to remove legacy finalizer")
 			return ctrl.Result{}, err
 		}
-
-		return ctrl.Result{}, nil
+		logger.Info("Legacy finalizer removed, requeuing reconciliation")
+		return ctrl.Result{RequeueAfter: time.Second * 1}, nil
 	}
 
-	// Add finalizer if not present
-	if !controllerutil.ContainsFinalizer(overcommitClass, "overcommitclass.finalizer") {
-		logger.Info("Adding finalizer to OvercommitClass CR")
-		controllerutil.AddFinalizer(overcommitClass, "overcommitclass.finalizer")
-		err = r.Update(ctx, overcommitClass)
-		if err != nil {
-			logger.Error(err, "Failed to add finalizer")
-			return ctrl.Result{}, err
-		}
-		// Return early to trigger a new reconciliation with the updated object
-		logger.Info("Finalizer added, requeuing reconciliation")
-		return ctrl.Result{}, nil
-	}
 	// Check if the OvercommitClass has the correct owner reference
 	overcommitResource, err := utils.GetOvercommit(ctx, r.Client)
 	if err != nil {

@@ -15,6 +15,7 @@ import (
 	"github.com/InditexTech/k8s-overcommit-operator/internal/utils"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,121 +25,126 @@ import (
 
 func (r *OvercommitReconciler) updateOvercommitStatus(ctx context.Context, overcommitObject *overcommit.Overcommit) error {
 	logger := logf.FromContext(ctx)
+	logger.V(1).Info("Updating Overcommit status")
 
-	// Initialize resource status map
+	// Initialize resource status map with better structure
 	resourceStatuses := make(map[string]overcommit.ResourceStatus)
+
+	// Helper function to check resource status
+	checkResourceStatus := func(name, resourceType string, checkFunc func() error) {
+		err := checkFunc()
+		ready := err == nil
+		resourceStatuses[resourceType] = overcommit.ResourceStatus{
+			Name:  name,
+			Ready: ready,
+		}
+		if !ready {
+			logger.V(1).Info("Resource not ready", "type", resourceType, "name", name, "error", err)
+		}
+	}
 
 	// Check Issuer status
 	issuer := resources.GenerateIssuer()
-	err := r.Get(ctx, client.ObjectKey{Name: issuer.Name, Namespace: issuer.Namespace}, issuer)
-	if err == nil {
-		resourceStatuses["issuer"] = overcommit.ResourceStatus{Name: issuer.Name, Ready: true}
-	} else {
-		resourceStatuses["issuer"] = overcommit.ResourceStatus{Name: issuer.Name, Ready: false}
-	}
+	checkResourceStatus(issuer.Name, "issuer", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: issuer.Name, Namespace: issuer.Namespace}, issuer)
+	})
 
-	// Check Deployment Validating Class status
-	deployment := resources.GenerateOvercommitClassValidatingDeployment(*overcommitObject)
-	err = r.Get(ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, deployment)
-	if err == nil {
-		resourceStatuses["deployment"] = overcommit.ResourceStatus{Name: deployment.Name, Ready: true}
-	} else {
-		resourceStatuses["deployment"] = overcommit.ResourceStatus{Name: deployment.Name, Ready: false}
-	}
+	// Check OvercommitClass Validator components
+	overcommitClassDeployment := resources.GenerateOvercommitClassValidatingDeployment(*overcommitObject)
+	checkResourceStatus(overcommitClassDeployment.Name, "overcommitclass-deployment", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: overcommitClassDeployment.Name, Namespace: overcommitClassDeployment.Namespace}, overcommitClassDeployment)
+	})
 
-	// Check Service Validating Class status
-	service := resources.GenerateOvercommitClassValidatingService(*deployment)
-	err = r.Get(ctx, client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
-	if err == nil {
-		resourceStatuses["service"] = overcommit.ResourceStatus{Name: service.Name, Ready: true}
-	} else {
-		resourceStatuses["service"] = overcommit.ResourceStatus{Name: service.Name, Ready: false}
-	}
+	overcommitClassService := resources.GenerateOvercommitClassValidatingService(*overcommitClassDeployment)
+	checkResourceStatus(overcommitClassService.Name, "overcommitclass-service", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: overcommitClassService.Name, Namespace: overcommitClassService.Namespace}, overcommitClassService)
+	})
 
-	// Check Certificate Validating Class status
-	certificate := resources.GenerateCertificateValidatingOvercommitClass(*resources.GenerateIssuer(), *service)
-	err = r.Get(ctx, client.ObjectKey{Name: certificate.Name, Namespace: certificate.Namespace}, certificate)
-	if err == nil {
-		resourceStatuses["certificate"] = overcommit.ResourceStatus{Name: certificate.Name, Ready: true}
-	} else {
-		resourceStatuses["certificate"] = overcommit.ResourceStatus{Name: certificate.Name, Ready: false}
-	}
+	overcommitClassCertificate := resources.GenerateCertificateValidatingOvercommitClass(*issuer, *overcommitClassService)
+	checkResourceStatus(overcommitClassCertificate.Name, "overcommitclass-certificate", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: overcommitClassCertificate.Name, Namespace: overcommitClassCertificate.Namespace}, overcommitClassCertificate)
+	})
 
-	// Check Webhook Validating Class status
-	webhook := resources.GenerateOvercommitClassValidatingWebhookConfiguration(*deployment, *service, *certificate)
-	err = r.Get(ctx, client.ObjectKey{Name: webhook.Name}, webhook)
-	if err == nil {
-		resourceStatuses["webhook"] = overcommit.ResourceStatus{Name: webhook.Name, Ready: true}
-	} else {
-		resourceStatuses["webhook"] = overcommit.ResourceStatus{Name: webhook.Name, Ready: false}
-	}
+	overcommitClassWebhook := resources.GenerateOvercommitClassValidatingWebhookConfiguration(*overcommitClassDeployment, *overcommitClassService, *overcommitClassCertificate)
+	checkResourceStatus(overcommitClassWebhook.Name, "overcommitclass-webhook", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: overcommitClassWebhook.Name}, overcommitClassWebhook)
+	})
 
-	// Check Deployment Validating Pods status
+	// Check Pod Validator components
 	podDeployment := resources.GeneratePodValidatingDeployment(*overcommitObject)
-	err = r.Get(ctx, client.ObjectKey{Name: podDeployment.Name, Namespace: podDeployment.Namespace}, podDeployment)
-	if err == nil {
-		resourceStatuses["podDeployment"] = overcommit.ResourceStatus{Name: podDeployment.Name, Ready: true}
-	} else {
-		resourceStatuses["podDeployment"] = overcommit.ResourceStatus{Name: podDeployment.Name, Ready: false}
-	}
+	checkResourceStatus(podDeployment.Name, "pod-deployment", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: podDeployment.Name, Namespace: podDeployment.Namespace}, podDeployment)
+	})
 
-	// Check Service Validating Pods status
 	podService := resources.GeneratePodValidatingService(*podDeployment)
-	err = r.Get(ctx, client.ObjectKey{Name: podService.Name, Namespace: podService.Namespace}, podService)
-	if err == nil {
-		resourceStatuses["podService"] = overcommit.ResourceStatus{Name: podService.Name, Ready: true}
-	} else {
-		resourceStatuses["podService"] = overcommit.ResourceStatus{Name: podService.Name, Ready: false}
-	}
+	checkResourceStatus(podService.Name, "pod-service", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: podService.Name, Namespace: podService.Namespace}, podService)
+	})
 
-	// Check Certificate Validating Pods status
-	podCertificate := resources.GenerateCertificateValidatingPods(*resources.GenerateIssuer(), *podService)
-	err = r.Get(ctx, client.ObjectKey{Name: podCertificate.Name, Namespace: podCertificate.Namespace}, podCertificate)
-	if err == nil {
-		resourceStatuses["podCertificate"] = overcommit.ResourceStatus{Name: podCertificate.Name, Ready: true}
-	} else {
-		resourceStatuses["podCertificate"] = overcommit.ResourceStatus{Name: podCertificate.Name, Ready: false}
-	}
+	podCertificate := resources.GenerateCertificateValidatingPods(*issuer, *podService)
+	checkResourceStatus(podCertificate.Name, "pod-certificate", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: podCertificate.Name, Namespace: podCertificate.Namespace}, podCertificate)
+	})
 
-	// Check Webhook Validating Pods status
+	// Check Pod Webhook (handle label errors gracefully)
 	label, err := utils.GetOvercommitLabel(ctx, r.Client)
 	if err != nil {
-		logger.Error(err, "Failed to get Overcommit label")
-		return err
-	}
-	podWebhook := resources.GeneratePodValidatingWebhookConfiguration(*podDeployment, *podService, *podCertificate, label)
-	err = r.Get(ctx, client.ObjectKey{Name: podWebhook.Name}, podWebhook)
-	if err == nil {
-		resourceStatuses["podWebhook"] = overcommit.ResourceStatus{Name: podWebhook.Name, Ready: true}
-	} else {
-		resourceStatuses["podWebhook"] = overcommit.ResourceStatus{Name: podWebhook.Name, Ready: false}
+		logger.Info("Failed to get Overcommit label, using default", "error", err)
+		label = "overcommit.inditex.dev/class"
 	}
 
-	// Convert map to slice for CRD status
-	resourceStatusSlice := make([]overcommit.ResourceStatus, 0, len(resourceStatuses)) // Pre-allocate slice
+	podWebhook := resources.GeneratePodValidatingWebhookConfiguration(*podDeployment, *podService, *podCertificate, label)
+	checkResourceStatus(podWebhook.Name, "pod-webhook", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: podWebhook.Name}, podWebhook)
+	})
+
+	// Check OvercommitClass Controller
+	ocController := resources.GenerateOvercommitClassControllerDeployment(*overcommitObject)
+	checkResourceStatus(ocController.Name, "overcommitclass-controller", func() error {
+		return r.Get(ctx, client.ObjectKey{Name: ocController.Name, Namespace: ocController.Namespace}, ocController)
+	})
+
+	// Convert map to slice for CRD status (maintain consistent order)
+	resourceTypes := []string{
+		"issuer",
+		"overcommitclass-deployment", "overcommitclass-service", "overcommitclass-certificate", "overcommitclass-webhook",
+		"pod-deployment", "pod-service", "pod-certificate", "pod-webhook",
+		"overcommitclass-controller",
+	}
+
+	resourceStatusSlice := make([]overcommit.ResourceStatus, 0, len(resourceStatuses))
 	allReady := true
-	for _, status := range resourceStatuses {
-		resourceStatusSlice = append(resourceStatusSlice, status)
-		if !status.Ready {
-			allReady = false
+	readyCount := 0
+
+	for _, resourceType := range resourceTypes {
+		if status, exists := resourceStatuses[resourceType]; exists {
+			resourceStatusSlice = append(resourceStatusSlice, status)
+			if status.Ready {
+				readyCount++
+			} else {
+				allReady = false
+			}
 		}
 	}
 
 	// Update the status of the CRD
 	overcommitObject.Status.Resources = resourceStatusSlice
 
-	// Update the condition
+	// Update the condition with more detailed information
 	condition := metav1.Condition{
-		Type:    "ResourcesReady",
-		Status:  metav1.ConditionTrue,
-		Reason:  "AllResourcesReady",
-		Message: "All managed resources are ready",
+		Type:               "ResourcesReady",
+		Status:             metav1.ConditionTrue,
+		Reason:             "AllResourcesReady",
+		Message:            fmt.Sprintf("All %d managed resources are ready", len(resourceStatusSlice)),
+		LastTransitionTime: metav1.Now(),
 	}
+
 	if !allReady {
 		condition.Status = metav1.ConditionFalse
 		condition.Reason = "ResourcesNotReady"
-		condition.Message = "Some resources are not ready"
+		condition.Message = fmt.Sprintf("%d of %d resources are ready", readyCount, len(resourceStatusSlice))
 	}
+
 	setCondition(&overcommitObject.Status, condition)
 
 	// Update the status in the API
@@ -147,20 +153,21 @@ func (r *OvercommitReconciler) updateOvercommitStatus(ctx context.Context, overc
 		return err
 	}
 
+	logger.V(1).Info("Successfully updated Overcommit status", "ready", readyCount, "total", len(resourceStatusSlice))
 	return nil
 }
 
 // updateOvercommitStatusSafely safely updates the status by first refreshing the object from the cluster
 // with retry logic to handle concurrent modifications
-// Since Overcommit is cluster-wide and always named "cluster", we use a fixed key
 func (r *OvercommitReconciler) updateOvercommitStatusSafely(ctx context.Context) error {
 	logger := logf.FromContext(ctx)
 
 	// Since Overcommit is cluster-wide and always named "cluster", use the correct key
 	clusterKey := types.NamespacedName{Name: "cluster", Namespace: ""}
 
-	// Retry up to 3 times with exponential backoff
-	for attempt := 0; attempt < 3; attempt++ {
+	// Retry up to 5 times with exponential backoff
+	maxRetries := 5
+	for attempt := 0; attempt < maxRetries; attempt++ {
 		// Fetch the latest version of the object from the cluster
 		freshOvercommit := &overcommit.Overcommit{}
 		if err := r.Get(ctx, clusterKey, freshOvercommit); err != nil {
@@ -169,97 +176,74 @@ func (r *OvercommitReconciler) updateOvercommitStatusSafely(ctx context.Context)
 				return err
 			}
 			// Object not found, nothing to update
+			logger.V(1).Info("Overcommit object not found, skipping status update")
 			return nil
 		}
 
 		// Try to update status using the fresh object
 		if err := r.updateOvercommitStatus(ctx, freshOvercommit); err != nil {
-			if attempt == 2 { // Last attempt
-				logger.Error(err, "Failed to update Overcommit status after all retries")
+			isConflict := errors.IsConflict(err)
+			isLastAttempt := attempt == maxRetries-1
+
+			if isLastAttempt {
+				logger.Error(err, "Failed to update Overcommit status after all retries", "maxRetries", maxRetries)
 				return err
 			}
-			logger.Info("Retrying status update due to conflict", "attempt", attempt+1, "error", err.Error())
-			// Wait a bit before retrying (exponential backoff)
-			time.Sleep(time.Duration(attempt+1) * 100 * time.Millisecond)
-			continue
+
+			if isConflict {
+				// Wait with exponential backoff for conflicts
+				backoffDuration := time.Duration(1<<uint(attempt)) * 50 * time.Millisecond
+				logger.V(1).Info("Retrying status update due to conflict",
+					"attempt", attempt+1,
+					"maxRetries", maxRetries,
+					"backoff", backoffDuration.String())
+				time.Sleep(backoffDuration)
+				continue
+			} else {
+				// Non-conflict error, return immediately
+				logger.Error(err, "Non-conflict error during status update")
+				return err
+			}
 		}
+
 		// Success
+		logger.V(1).Info("Successfully updated Overcommit status", "attempts", attempt+1)
 		return nil
 	}
-	return fmt.Errorf("failed to update status after 3 attempts")
+
+	return fmt.Errorf("failed to update status after %d attempts", maxRetries)
 }
 
 func setCondition(status *overcommit.OvercommitStatus, newCondition metav1.Condition) {
+	// Ensure LastTransitionTime is set for new conditions
+	if newCondition.LastTransitionTime.IsZero() {
+		newCondition.LastTransitionTime = metav1.Now()
+	}
+
+	// Find existing condition of the same type
 	for i, existingCondition := range status.Conditions {
 		if existingCondition.Type == newCondition.Type {
+			// Check if anything has changed
 			if existingCondition.Status != newCondition.Status ||
 				existingCondition.Reason != newCondition.Reason ||
 				existingCondition.Message != newCondition.Message {
-				newCondition.LastTransitionTime = metav1.Now()
+
+				// Update LastTransitionTime only if status changed
+				if existingCondition.Status != newCondition.Status {
+					newCondition.LastTransitionTime = metav1.Now()
+				} else {
+					// Keep the original transition time if only message/reason changed
+					newCondition.LastTransitionTime = existingCondition.LastTransitionTime
+				}
+
 				status.Conditions[i] = newCondition
 			}
 			return
 		}
 	}
-	newCondition.LastTransitionTime = metav1.Now()
+
+	// Condition doesn't exist, add it
 	status.Conditions = append(status.Conditions, newCondition)
-}
-
-// cleanupResources ensures that all resources associated with the CR are deleted.
-func (r *OvercommitReconciler) cleanupResources(ctx context.Context, overcommitObject *overcommit.Overcommit) error {
-	logger := logf.FromContext(ctx)
-	logger.Info("Cleaning up resources associated with Overcommit CR")
-
-	label, err := utils.GetOvercommitLabel(ctx, r.Client)
-	if err != nil {
-		logger.Error(err, "Failed to get Overcommit label")
-		return err
-	}
-
-	// Delete Issuer
-	issuer := resources.GenerateIssuer()
-	if issuer != nil {
-		err := r.Delete(ctx, issuer)
-		if err != nil && client.IgnoreNotFound(err) != nil {
-			logger.Error(err, "Failed to delete Issuer")
-			return err
-		}
-	}
-
-	// Delete OvercommitClassValidator resources
-	overcommitClassDeployment := resources.GenerateOvercommitClassValidatingDeployment(*overcommitObject)
-	overcommitClassService := resources.GenerateOvercommitClassValidatingService(*overcommitClassDeployment)
-	overcommitClassCertificate := resources.GenerateCertificateValidatingOvercommitClass(*issuer, *overcommitClassService)
-	overcommitClassWebhook := resources.GenerateOvercommitClassValidatingWebhookConfiguration(*overcommitClassDeployment, *overcommitClassService, *overcommitClassCertificate)
-
-	for _, resource := range []client.Object{overcommitClassDeployment, overcommitClassService, overcommitClassCertificate, overcommitClassWebhook} {
-		err := r.Delete(ctx, resource)
-		if err != nil && client.IgnoreNotFound(err) != nil {
-			logger.Error(err, fmt.Sprintf("Failed to delete resource: %T", resource))
-			return err
-		}
-	}
-
-	// Delete PodValidator resources
-	validatingPodDeployment := resources.GeneratePodValidatingDeployment(*overcommitObject)
-	validatingPodService := resources.GeneratePodValidatingService(*validatingPodDeployment)
-	validatingpodCertificate := resources.GenerateCertificateValidatingPods(*issuer, *validatingPodService)
-	validatingPodWebhook := resources.GeneratePodValidatingWebhookConfiguration(*validatingPodDeployment, *validatingPodService, *validatingpodCertificate, label)
-
-	for _, resource := range []client.Object{validatingPodDeployment, validatingPodService, validatingpodCertificate, validatingPodWebhook} {
-		err := r.Delete(ctx, resource)
-		if err != nil && client.IgnoreNotFound(err) != nil {
-			logger.Error(err, fmt.Sprintf("Failed to delete resource: %T", resource))
-			return err
-		}
-	}
-
-	occontroller := resources.GenerateOvercommitClassControllerDeployment(*overcommitObject)
-	err = r.Delete(ctx, occontroller)
-	if err != nil && client.IgnoreNotFound(err) != nil {
-		logger.Error(err, "Failed to delete Overcommit Class Controller")
-	}
-	return nil
 }
 
 // envVarsEqual compares two slices of environment variables to see if they're equal

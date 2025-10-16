@@ -6,71 +6,9 @@
 package controller
 
 import (
-	"context"
-
-	overcommit "github.com/InditexTech/k8s-overcommit-operator/api/v1alphav1"
-	resources "github.com/InditexTech/k8s-overcommit-operator/internal/resources"
-	"github.com/InditexTech/k8s-overcommit-operator/internal/utils"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-// cleanupResources ensures that all resources associated with the OvercommitClass CR are deleted.
-func (r *OvercommitClassReconciler) cleanupResources(ctx context.Context, overcommitClass *overcommit.OvercommitClass) error {
-	logger := log.FromContext(ctx)
-	logger.Info("Cleaning up resources associated with OvercommitClass CR", "name", overcommitClass.Name)
-
-	// Delete Deployment
-	deployment := resources.CreateDeployment(*overcommitClass)
-	if deployment != nil {
-		err := r.Delete(ctx, deployment)
-		if err != nil && client.IgnoreNotFound(err) != nil {
-			logger.Error(err, "Failed to delete Deployment")
-			return err
-		}
-	}
-
-	// Delete Service
-	service := resources.CreateService(overcommitClass.Name)
-	if service != nil {
-		err := r.Delete(ctx, service)
-		if err != nil && client.IgnoreNotFound(err) != nil {
-			logger.Error(err, "Failed to delete Service")
-			return err
-		}
-	}
-
-	// Delete Certificate
-	certificate := resources.CreateCertificate(overcommitClass.Name, *service)
-	if certificate != nil {
-		err := r.Delete(ctx, certificate)
-		if err != nil && client.IgnoreNotFound(err) != nil {
-			logger.Error(err, "Failed to delete Certificate")
-			return err
-		}
-	}
-
-	// Delete MutatingWebhookConfiguration
-	label, err := utils.GetOvercommitLabel(ctx, r.Client)
-	if err != nil {
-		logger.Error(err, "Failed to get Overcommit label")
-		return err
-	}
-
-	webhookConfig := resources.CreateMutatingWebhookConfiguration(*overcommitClass, *service, *certificate, label)
-	if webhookConfig != nil {
-		err := r.Delete(ctx, webhookConfig)
-		if err != nil && client.IgnoreNotFound(err) != nil {
-			logger.Error(err, "Failed to delete MutatingWebhookConfiguration")
-			return err
-		}
-	}
-
-	logger.Info("Successfully cleaned up resources for OvercommitClass", "name", overcommitClass.Name)
-	return nil
-}
 
 // envVarsEqual compares two slices of environment variables to see if they're equal
 func envVarsEqual(a, b []corev1.EnvVar) bool {
