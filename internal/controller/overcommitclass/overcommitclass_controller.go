@@ -28,6 +28,7 @@ type OvercommitClassReconciler struct {
 
 // +kubebuilder:rbac:groups=overcommit.inditex.dev,resources=overcommitclasses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=overcommit.inditex.dev,resources=overcommitclasses/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=overcommit.inditex.dev,resources=overcommitclasses/finalizers,verbs=update
 // +kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups=cert-manager.io,resources=issuers,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch;update
@@ -70,6 +71,22 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		// CR not found, nothing to do
 		logger.Info("OvercommitClass CR not found, skipping reconciliation")
 		return ctrl.Result{}, nil
+	}
+
+	// Migration: Remove legacy finalizer from previous versions
+	// Previous versions of this operator added finalizers to OvercommitClass CRs for manual cleanup.
+	// To ensure smooth upgrades, we automatically remove any legacy finalizer
+	// so that CRs created before this change can be deleted normally.
+	if controllerutil.ContainsFinalizer(overcommitClass, "overcommitclass.finalizer") {
+		logger.Info("Removing legacy finalizer during migration", "finalizer", "overcommitclass.finalizer")
+		controllerutil.RemoveFinalizer(overcommitClass, "overcommitclass.finalizer")
+		err = r.Update(ctx, overcommitClass)
+		if err != nil {
+			logger.Error(err, "Failed to remove legacy finalizer")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Legacy finalizer removed, requeuing reconciliation")
+		return ctrl.Result{RequeueAfter: time.Second * 1}, nil
 	}
 
 	// Check if the OvercommitClass has the correct owner reference

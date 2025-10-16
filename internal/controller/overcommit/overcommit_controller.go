@@ -33,6 +33,7 @@ type OvercommitReconciler struct {
 
 // +kubebuilder:rbac:groups=overcommit.inditex.dev,resources=overcommits,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=overcommit.inditex.dev,resources=overcommits/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=overcommit.inditex.dev,resources=overcommits/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -62,6 +63,31 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		// CR not found, nothing to do
 		logger.Info("Overcommit CR not found, skipping reconciliation")
 		return ctrl.Result{}, nil
+	}
+
+	// Migration: Remove legacy finalizers from previous versions
+	// Previous versions of this operator added finalizers to CRs for manual cleanup.
+	// To ensure smooth upgrades, we automatically remove any legacy finalizers
+	// so that CRs created before this change can be deleted normally.
+	legacyFinalizers := []string{"overcommit.finalizer", "webhook.finalizer"}
+	finalizerRemoved := false
+	for _, legacyFinalizer := range legacyFinalizers {
+		if controllerutil.ContainsFinalizer(overcommit, legacyFinalizer) {
+			logger.Info("Removing legacy finalizer during migration", "finalizer", legacyFinalizer)
+			controllerutil.RemoveFinalizer(overcommit, legacyFinalizer)
+			finalizerRemoved = true
+		}
+	}
+
+	// If we removed any legacy finalizers, update the object and requeue
+	if finalizerRemoved {
+		err = r.Update(ctx, overcommit)
+		if err != nil {
+			logger.Error(err, "Failed to remove legacy finalizers")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Legacy finalizers removed, requeuing reconciliation")
+		return ctrl.Result{RequeueAfter: time.Second * 1}, nil
 	}
 
 	// Reconcile Issuer
