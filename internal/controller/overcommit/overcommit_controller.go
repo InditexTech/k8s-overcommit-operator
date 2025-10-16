@@ -33,7 +33,6 @@ type OvercommitReconciler struct {
 
 // +kubebuilder:rbac:groups=overcommit.inditex.dev,resources=overcommits,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=overcommit.inditex.dev,resources=overcommits/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=overcommit.inditex.dev,resources=overcommits/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -65,47 +64,11 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, nil
 	}
 
-	// Check if the CR is being deleted
-	if !overcommit.ObjectMeta.DeletionTimestamp.IsZero() {
-		logger.Info("Overcommit CR is being deleted, cleaning up resources")
-
-		// Clean up resources
-		err := r.cleanupResources(ctx, overcommit)
-		if err != nil {
-			logger.Error(err, "Failed to clean up resources")
-			return ctrl.Result{}, err
-		}
-
-		// Remove finalizer if cleanup is successful
-		controllerutil.RemoveFinalizer(overcommit, "overcommit.finalizer")
-		err = r.Update(ctx, overcommit)
-		if err != nil {
-			logger.Error(err, "Failed to remove finalizer")
-			return ctrl.Result{}, err
-		}
-
-		return ctrl.Result{}, nil
-	}
-
-	// Add finalizer if not present
-	if !controllerutil.ContainsFinalizer(overcommit, "overcommit.finalizer") {
-		logger.Info("Adding finalizer to Overcommit CR")
-		controllerutil.AddFinalizer(overcommit, "overcommit.finalizer")
-		err = r.Update(ctx, overcommit)
-		if err != nil {
-			logger.Error(err, "Failed to add finalizer")
-			return ctrl.Result{}, err
-		}
-		// Return early to trigger a new reconciliation with the updated object
-		logger.Info("Finalizer added, requeuing reconciliation")
-		return ctrl.Result{}, nil
-	}
-
 	// Reconcile Issuer
 	issuer := resources.GenerateIssuer()
 	if issuer == nil {
 		logger.Error(nil, "Generated issuer is nil")
-		return ctrl.Result{}, fmt.Errorf("Generated issuer is nil")
+		return ctrl.Result{}, fmt.Errorf("generated issuer is nil")
 	}
 
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, issuer, func() error {
@@ -393,6 +356,12 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	})
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	// Update the status of all resources
+	if err := r.updateOvercommitStatusSafely(ctx); err != nil {
+		logger.Error(err, "Failed to update Overcommit status")
+		// Don't fail the reconciliation for status update errors
 	}
 
 	// Only requeue periodically for status checks, not immediately
