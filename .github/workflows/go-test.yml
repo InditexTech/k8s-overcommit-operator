@@ -1,6 +1,8 @@
 name: ⚒️ Go tests and linting for the webhook
 on:
   pull_request:
+permissions:
+  contents: read
 jobs:
   test:
     name: Test 🔨
