@@ -30,10 +30,10 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2025-10-16T11:56:42Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.40.0
+    createdAt: "2026-03-13T14:09:51Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.42.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
-  name: k8s-overcommit.v1.1.1
+  name: k8s-overcommit.v1.2.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -221,7 +221,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: ghcr.io/inditextech/k8s-overcommit-operator:1.1.1
+                image: ghcr.io/inditextech/k8s-overcommit-operator:1.2.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -313,4 +313,4 @@ spec:
   minKubeVersion: 1.22.0
   provider:
     name: inditexTech
-  version: 1.1.1
+  version: 1.2.0

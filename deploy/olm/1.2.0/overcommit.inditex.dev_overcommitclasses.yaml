@@ -2,27 +2,38 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.17.2
   creationTimestamp: null
-  name: overcommits.overcommit.inditex.dev
+  name: overcommitclasses.overcommit.inditex.dev
 spec:
   group: overcommit.inditex.dev
   names:
-    kind: Overcommit
-    listKind: OvercommitList
-    plural: overcommits
-    singular: overcommit
+    kind: OvercommitClass
+    listKind: OvercommitClassList
+    plural: overcommitclasses
+    shortNames:
+    - oc
+    - ocs
+    singular: overcommitclass
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - description: Label to apply to the pods to make overcommit
-      jsonPath: .spec.overcommitLabel
-      name: Target Label
-      type: string
+    - description: CPU overcommit ratio
+      jsonPath: .spec.cpuOvercommit
+      name: CPU
+      type: number
+    - description: Memory overcommit ratio
+      jsonPath: .spec.memoryOvercommit
+      name: Memory
+      type: number
+    - description: Is default overcommit class
+      jsonPath: .spec.isDefault
+      name: Default
+      type: boolean
     name: v1alphav1
     schema:
       openAPIV3Schema:
-        description: Overcommit is the Schema for the overcommits API
+        description: OvercommitClass is the Schema for the overcommitclasses API
         properties:
           apiVersion:
             description: |-
@@ -42,23 +53,33 @@ spec:
           metadata:
             type: object
           spec:
-            description: OvercommitSpec defines the desired state of Overcommit
+            description: OvercommitClassSpec defines the desired state of OvercommitClass
             properties:
               annotations:
                 additionalProperties:
                   type: string
                 type: object
+              cpuOvercommit:
+                maximum: 1
+                minimum: 0.0001
+                type: number
+              excludedNamespaces:
+                type: string
+              isDefault:
+                default: false
+                type: boolean
               labels:
                 additionalProperties:
                   type: string
                 type: object
+              memoryOvercommit:
+                maximum: 1
+                minimum: 0.0001
+                type: number
               nodeSelector:
                 additionalProperties:
                   type: string
                 type: object
-              overcommitLabel:
-                minLength: 1
-                type: string
               tolerations:
                 items:
                   description: |-
@@ -98,10 +119,12 @@ spec:
                   type: object
                 type: array
             required:
-            - overcommitLabel
+            - cpuOvercommit
+            - excludedNamespaces
+            - memoryOvercommit
             type: object
           status:
-            description: OvercommitStatus defines the observed state of Overcommit
+            description: OvercommitClassStatus defines the observed state of OvercommitClass
             properties:
               conditions:
                 items:
@@ -160,6 +183,9 @@ spec:
                   type: object
                 type: array
               resources:
+                description: |-
+                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
                 items:
                   properties:
                     name:
@@ -172,9 +198,6 @@ spec:
                 type: array
             type: object
         type: object
-        x-kubernetes-validations:
-        - message: overcommit is a singleton, .metadata.name must be 'cluster'
-          rule: self.metadata.name == 'cluster'
     served: true
     storage: true
     subresources:
