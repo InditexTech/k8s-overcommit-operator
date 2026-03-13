@@ -175,7 +175,7 @@ func getSelectorClassNotExist(label string) *metav1.LabelSelector {
 	}
 }
 
-func getMatchCondition(isDefault bool, name string, excludedNamespaces string, label string) []admissionv1.MatchCondition {
+func getMatchCondition(excludedNamespaces string) []admissionv1.MatchCondition {
 	matchConditions := []admissionv1.MatchCondition{}
 	matchConditions = append(matchConditions, admissionv1.MatchCondition{
 		Name:       "exclude-namespaces",
@@ -202,11 +202,36 @@ func getObjectSelector(isDefault bool, label string, name string) *metav1.LabelS
 }
 
 func CreateMutatingWebhookConfiguration(class overcommit.OvercommitClass, svc corev1.Service, cert certmanager.Certificate, label string) *admissionv1.MutatingWebhookConfiguration {
-
 	var path = "/mutate--v1-pod"
 	var scope = admissionv1.NamespacedScope
 	var policy = admissionv1.Fail
 	var sideEffect = admissionv1.SideEffectClassNone
+	var reinvocationPolicy = admissionv1.IfNeededReinvocationPolicy
+
+	rules := []admissionv1.RuleWithOperations{
+		{
+			Operations: []admissionv1.OperationType{
+				admissionv1.Create,
+			},
+			Rule: admissionv1.Rule{
+				APIGroups:   []string{""},
+				APIVersions: []string{"v1"},
+				Resources:   []string{"pods"},
+				Scope:       &scope,
+			},
+		},
+		{
+			Operations: []admissionv1.OperationType{
+				admissionv1.Update,
+			},
+			Rule: admissionv1.Rule{
+				APIGroups:   []string{""},
+				APIVersions: []string{"v1"},
+				Resources:   []string{"pods/resize"},
+				Scope:       &scope,
+			},
+		},
+	}
 
 	webhookConfig := &admissionv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
@@ -225,23 +250,12 @@ func CreateMutatingWebhookConfiguration(class overcommit.OvercommitClass, svc co
 						Path:      &path,
 					},
 				},
-				Rules: []admissionv1.RuleWithOperations{
-					{
-						Operations: []admissionv1.OperationType{
-							admissionv1.Create,
-						},
-						Rule: admissionv1.Rule{
-							APIGroups:   []string{""},
-							APIVersions: []string{"v1"},
-							Resources:   []string{"pods"},
-							Scope:       &scope,
-						},
-					},
-				},
+				Rules:                   rules,
 				AdmissionReviewVersions: []string{"v1"},
 				FailurePolicy:           &policy,
 				SideEffects:             &sideEffect,
-				MatchConditions:         getMatchCondition(false, class.Name, class.Spec.ExcludedNamespaces, label),
+				ReinvocationPolicy:      &reinvocationPolicy,
+				MatchConditions:         getMatchCondition(class.Spec.ExcludedNamespaces),
 				ObjectSelector:          getObjectSelector(false, label, class.Name),
 			},
 		},
@@ -257,25 +271,15 @@ func CreateMutatingWebhookConfiguration(class overcommit.OvercommitClass, svc co
 					Path:      &path,
 				},
 			},
-			Rules: []admissionv1.RuleWithOperations{
-				{
-					Operations: []admissionv1.OperationType{
-						admissionv1.Create,
-					},
-					Rule: admissionv1.Rule{
-						APIGroups:   []string{""},
-						APIVersions: []string{"v1"},
-						Resources:   []string{"pods"},
-						Scope:       &scope,
-					},
-				},
-			},
+			Rules:                   rules,
 			AdmissionReviewVersions: []string{"v1"},
 			FailurePolicy:           &policy,
 			SideEffects:             &sideEffect,
-			MatchConditions:         getMatchCondition(class.Spec.IsDefault, class.Name, class.Spec.ExcludedNamespaces, label),
+			ReinvocationPolicy:      &reinvocationPolicy,
+			MatchConditions:         getMatchCondition(class.Spec.ExcludedNamespaces),
 			ObjectSelector:          getObjectSelector(class.Spec.IsDefault, label, class.Name),
 		})
 	}
+
 	return webhookConfig
 }
