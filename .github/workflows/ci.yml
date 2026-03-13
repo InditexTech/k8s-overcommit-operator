@@ -27,7 +27,7 @@ jobs:
       run: bash hack/install-dependencies.sh
 
     - name: Run kind ⚙️
-      run: kind create cluster --name kuttl-cluster
+      run: kind create cluster --name kuttl-cluster --config ./hack/kind-config.yaml
 
     - name: Mount the image in the Kind cluster ⚙️
       run: |

@@ -10,7 +10,7 @@ echo "Mounting image in the Kind cluster"
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.0/cert-manager.yaml
 kubectl wait --for=condition=available --timeout=40s deployment/cert-manager-webhook -n cert-manager
 make docker-build IMG=k8s-overcommit/webhook:teste2e
-kind load docker-image k8s-overcommit/webhook:teste2e --name kuttl-cluster --config ./hack/kind-config.yaml
+kind load docker-image k8s-overcommit/webhook:teste2e --name kuttl-cluster
 echo "Mounted image in the Kind cluster, instaling operator"
 helm install k8s-overcommit chart --set createClasses=false --set createNamespace=true --set namespace=k8s-overcommit --set deployment.image.tag=teste2e --set deployment.image.registry=docker.io --set deployment.image.image=k8s-overcommit/webhook
 echo "Operator installed, waiting for the deployment to be ready"
