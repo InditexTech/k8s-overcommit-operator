@@ -13,6 +13,7 @@ webhooks:
       path: /mutate--v1-pod
   failurePolicy: Ignore
   name: mutating-pod-v1.overcommit.inditex.dev
+  reinvocationPolicy: IfNeeded
   rules:
   - apiGroups:
     - ""
@@ -23,6 +24,7 @@ webhooks:
     - UPDATE
     resources:
     - pods
+    - pods/resize
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1

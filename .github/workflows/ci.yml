@@ -22,12 +22,12 @@ jobs:
 
     - name: Install kubectl, helm, kind and kuttl ⬇️
       env:
-        KUTTL_VERSION: '0.20.0'
-        KUTTL_PLUGIN_FILENAME: 'kubectl-kuttl_0.20.0_linux_x86_64'
+        KUTTL_VERSION: '0.25.0'
+        KUTTL_PLUGIN_FILENAME: 'kubectl-kuttl_0.25.0_linux_x86_64'
       run: bash hack/install-dependencies.sh
 
     - name: Run kind ⚙️
-      run: kind create cluster --name kuttl-cluster
+      run: kind create cluster --name kuttl-cluster --config ./hack/kind-config.yaml
 
     - name: Mount the image in the Kind cluster ⚙️
       run: |
@@ -36,7 +36,7 @@ jobs:
     - name: Run the tests 🔎
       run: |
         echo "Running the tests"
-        kubectl kuttl test test/e2e/ --start-kind=false
+        kubectl kuttl test --config test/e2e/kuttl-test.yaml test/e2e/kuttl --start-kind=false
 
     - name: Clean up Kind cluster ☠️
       if: always()

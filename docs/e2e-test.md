@@ -24,5 +24,5 @@ Then build the image and install the test chart in the kind cluster
 And finally run the tests
 
 ```[sh]
-kubectl kuttl test code/test/e2e/ --config code/test/e2e/kuttl-tests.yaml --start-kind=false
+kubectl kuttl test --config test/e2e/kuttl-test.yaml test/e2e/kuttl --start-kind=false
 ```

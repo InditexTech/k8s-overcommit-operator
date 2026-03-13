@@ -16,13 +16,12 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // nolint:unused
 // log is for logging in this package.
-var podlog = logf.Log.WithName("webhook")
 
 // PodCustomDefaulter struct is responsible for setting default values on the custom resource of the Kind Pod.
 type PodCustomDefaulter struct {
@@ -40,19 +39,27 @@ func (d *PodCustomDefaulter) InjectClient(c client.Client) {
 
 var _ webhook.CustomDefaulter = &PodCustomDefaulter{}
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Pod.
 func (d *PodCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return fmt.Errorf("expected a Pod object but got %T", obj)
 	}
 
-	// Call the Overcommit function and pass the EventRecorder
+	isResize := false
+	if req, err := admission.RequestFromContext(ctx); err == nil {
+		isResize = req.SubResource == "resize"
+	}
+
+	if isResize {
+		overcommit.OvercommitOnResize(pod, d.Recorder, d.Client)
+		return nil
+	}
+
 	overcommit.Overcommit(pod, d.Recorder, d.Client)
 	return nil
 }
 
-// +kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=ignore,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=mutating-pod-v1.overcommit.inditex.dev,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=ignore,reinvocationPolicy=IfNeeded,sideEffects=None,groups="",resources=pods;pods/resize,verbs=create;update,versions=v1,name=mutating-pod-v1.overcommit.inditex.dev,admissionReviewVersions=v1
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
 
 // SetupPodWebhookWithManager registers the webhook for Pod in the manager.

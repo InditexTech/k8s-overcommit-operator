@@ -1,0 +1,24 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+featureGates:
+  InPlacePodVerticalScaling: true
+
+nodes:
+- role: control-plane
+  image: kindest/node:v1.35.0
+  kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+      extraArgs:
+        feature-gates: InPlacePodVerticalScaling=true
+    controllerManager:
+      extraArgs:
+        feature-gates: InPlacePodVerticalScaling=true
+    scheduler:
+      extraArgs:
+        feature-gates: InPlacePodVerticalScaling=true
+
+- role: worker
+  image: kindest/node:v1.35.0

@@ -8,7 +8,7 @@
 set -e
 
 #Kubectl
-curl -LO https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl
+curl -LO https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 #Helm3
@@ -22,6 +22,6 @@ sudo mv ${KUTTL_PLUGIN_FILENAME} /usr/local/bin/kubectl-kuttl
 sudo chmod +x /usr/local/bin/kubectl-kuttl
 
 #Kind
-curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.31.0/kind-linux-amd64
 chmod +x ./kind
 sudo mv ./kind /usr/local/bin/kind
