@@ -1,0 +1,8 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: >
+      kubectl patch pod resize-test
+      -n resize-test-ns
+      --subresource=resize
+      -p '{"spec":{"containers":[{"name":"test","resources":{"limits":{"cpu":"2"}}}]}}'

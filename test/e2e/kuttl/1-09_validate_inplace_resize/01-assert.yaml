@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resize-test
+  namespace: resize-test-ns
+spec:
+  containers:
+    - name: test
+      resources:
+        requests:
+          cpu: "500m"

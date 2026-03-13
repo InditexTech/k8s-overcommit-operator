@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: resize-test-ns
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resize-test
+  namespace: resize-test-ns
+spec:
+  containers:
+    - name: test
+      image: busybox
+      command: ["sleep","3600"]
+      resources:
+        limits:
+          cpu: "500m"
+          memory: "1Gi"

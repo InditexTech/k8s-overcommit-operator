@@ -1,0 +1,267 @@
+{
+   "name": "",
+   "tests": 24,
+   "failures": 1,
+   "time": "59.795",
+   "testsuite": [
+     {
+       "tests": 24,
+       "failures": 1,
+       "timestamp": "2026-03-13T13:48:30.306505082+01:00",
+       "time": "54.322",
+       "name": "test/e2e/kuttl",
+       "testsuite": [
+         {
+           "tests": 2,
+           "failures": 0,
+           "timestamp": "2026-03-13T13:48:30.307384902+01:00",
+           "time": "0.020",
+           "name": "1-00_validate_deployments_by_overcommit",
+           "testcase": [
+             {
+               "classname": "1-00_validate_deployments_by_overcommit",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:48:30.327587629+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-00_validate_deployments_by_overcommit",
+               "name": "step 0-",
+               "timestamp": "2026-03-13T13:48:30.327592472+01:00",
+               "time": "0.000",
+               "assertions": 4
+             }
+           ]
+         },
+         {
+           "tests": 2,
+           "failures": 0,
+           "timestamp": "2026-03-13T13:49:24.566194167+01:00",
+           "time": "0.062",
+           "name": "1-01_validate_default_webhook",
+           "testcase": [
+             {
+               "classname": "1-01_validate_default_webhook",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:49:24.628043486+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-01_validate_default_webhook",
+               "name": "step 0-setup",
+               "timestamp": "2026-03-13T13:49:24.628053571+01:00",
+               "time": "0.000",
+               "assertions": 1
+             }
+           ]
+         },
+         {
+           "tests": 3,
+           "failures": 0,
+           "timestamp": "2026-03-13T13:49:18.678419386+01:00",
+           "time": "0.215",
+           "name": "1-02_validate_excluded_namespaces",
+           "testcase": [
+             {
+               "classname": "1-02_validate_excluded_namespaces",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:49:18.893112587+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-02_validate_excluded_namespaces",
+               "name": "step 0-setup",
+               "timestamp": "2026-03-13T13:49:18.893132187+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-02_validate_excluded_namespaces",
+               "name": "step 1-",
+               "timestamp": "2026-03-13T13:49:18.893141747+01:00",
+               "time": "0.000",
+               "assertions": 3
+             }
+           ]
+         },
+         {
+           "tests": 2,
+           "failures": 0,
+           "timestamp": "2026-03-13T13:49:06.64447353+01:00",
+           "time": "0.099",
+           "name": "1-03_validate_namespace_labeled",
+           "testcase": [
+             {
+               "classname": "1-03_validate_namespace_labeled",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:49:06.743204738+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-03_validate_namespace_labeled",
+               "name": "step 0-setup",
+               "timestamp": "2026-03-13T13:49:06.743226684+01:00",
+               "time": "0.000",
+               "assertions": 1
+             }
+           ]
+         },
+         {
+           "tests": 2,
+           "failures": 0,
+           "timestamp": "2026-03-13T13:49:12.317621641+01:00",
+           "time": "1.037",
+           "name": "1-04_validate_e2e_class",
+           "testcase": [
+             {
+               "classname": "1-04_validate_e2e_class",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:49:13.354606589+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-04_validate_e2e_class",
+               "name": "step 0-setup",
+               "timestamp": "2026-03-13T13:49:13.354635573+01:00",
+               "time": "0.000",
+               "assertions": 2
+             }
+           ]
+         },
+         {
+           "tests": 2,
+           "failures": 0,
+           "timestamp": "2026-03-13T13:48:35.635640314+01:00",
+           "time": "0.066",
+           "name": "1-05_validate_pod_label",
+           "testcase": [
+             {
+               "classname": "1-05_validate_pod_label",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:48:35.70170288+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-05_validate_pod_label",
+               "name": "step 0-setup",
+               "timestamp": "2026-03-13T13:48:35.701715356+01:00",
+               "time": "0.000",
+               "assertions": 1
+             }
+           ]
+         },
+         {
+           "tests": 3,
+           "failures": 0,
+           "timestamp": "2026-03-13T13:49:01.035899521+01:00",
+           "time": "0.067",
+           "name": "1-06_validate_pod_without_limits",
+           "testcase": [
+             {
+               "classname": "1-06_validate_pod_without_limits",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:49:01.102912966+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-06_validate_pod_without_limits",
+               "name": "step 0-setup",
+               "timestamp": "2026-03-13T13:49:01.102925827+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-06_validate_pod_without_limits",
+               "name": "step 1-",
+               "timestamp": "2026-03-13T13:49:01.102931645+01:00",
+               "time": "0.000",
+               "assertions": 1
+             }
+           ]
+         },
+         {
+           "tests": 2,
+           "failures": 0,
+           "timestamp": "2026-03-13T13:48:55.690165424+01:00",
+           "time": "0.022",
+           "name": "1-07_validate_init_containers_mutated",
+           "testcase": [
+             {
+               "classname": "1-07_validate_init_containers_mutated",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:48:55.712273359+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-07_validate_init_containers_mutated",
+               "name": "step 0-setup",
+               "timestamp": "2026-03-13T13:48:55.712280767+01:00",
+               "time": "0.000",
+               "assertions": 1
+             }
+           ]
+         },
+         {
+           "tests": 3,
+           "failures": 0,
+           "timestamp": "2026-03-13T13:48:49.382038741+01:00",
+           "time": "1.086",
+           "name": "1-08_validate_tolerations_nodeSelector",
+           "testcase": [
+             {
+               "classname": "1-08_validate_tolerations_nodeSelector",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:48:50.468274962+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-08_validate_tolerations_nodeSelector",
+               "name": "step 0-setup",
+               "timestamp": "2026-03-13T13:48:50.468288003+01:00",
+               "time": "0.000",
+               "assertions": 1
+             },
+             {
+               "classname": "1-08_validate_tolerations_nodeSelector",
+               "name": "step 1-setup",
+               "timestamp": "2026-03-13T13:48:50.468293001+01:00",
+               "time": "0.000",
+               "assertions": 1
+             }
+           ]
+         },
+         {
+           "tests": 3,
+           "failures": 1,
+           "timestamp": "2026-03-13T13:48:41.132093378+01:00",
+           "time": "2.919",
+           "name": "1-09_validate_inplace_resize",
+           "testcase": [
+             {
+               "classname": "1-09_validate_inplace_resize",
+               "name": "setup",
+               "timestamp": "2026-03-13T13:48:44.050795625+01:00",
+               "time": "0.000"
+             },
+             {
+               "classname": "1-09_validate_inplace_resize",
+               "name": "step 0-setup",
+               "timestamp": "2026-03-13T13:48:44.0508048+01:00",
+               "time": "0.000",
+               "assertions": 1
+             },
+             {
+               "classname": "1-09_validate_inplace_resize",
+               "name": "step 1-setup",
+               "timestamp": "2026-03-13T13:48:44.050807747+01:00",
+               "time": "0.000",
+               "assertions": 1,
+               "failure": {
+                 "text": "command \"kubectl wait --for=condition=Ready pod/resize-test -n resize-test-n...\" failed, exit status 1",
+                 "message": "failed in step 1-setup"
+               }
+             }
+           ]
+         }
+       ]
+     }
+   ]
+ }
