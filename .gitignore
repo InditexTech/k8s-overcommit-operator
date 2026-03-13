@@ -31,3 +31,5 @@ hack/tilt/bin
 hack/tilt/chart
 
 *kubeconfig*
+
+e2e.json
