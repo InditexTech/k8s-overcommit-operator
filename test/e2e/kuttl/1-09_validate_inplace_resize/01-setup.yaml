@@ -5,4 +5,4 @@ commands:
       kubectl patch pod resize-test
       -n resize-test-ns
       --subresource=resize
-      -p '{"spec":{"containers":[{"name":"test","resources":{"limits":{"cpu":"2"}}}]}}'
+      -p '{"spec":{"containers":[{"name":"test","resources":{"limits":{"cpu":"1"}}}]}}'
