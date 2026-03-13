@@ -17,7 +17,8 @@ import (
 
 var _ = Describe("Overcommit", func() {
 	var (
-		pod              *corev1.Pod
+		pod *corev1.Pod
+
 		expectedRequests = corev1.ResourceList{
 			corev1.ResourceCPU:    *resource.NewMilliQuantity(500, resource.DecimalSI),
 			corev1.ResourceMemory: *resource.NewQuantity(536870912, resource.BinarySI),
@@ -51,6 +52,7 @@ var _ = Describe("Overcommit", func() {
 	})
 
 	Describe("mutateContainers", func() {
+
 		It("should mutate container requests based on overcommit values", func() {
 			mutateContainers(pod.Spec.Containers, pod, 0.5, 0.5)
 
@@ -59,10 +61,32 @@ var _ = Describe("Overcommit", func() {
 
 		It("should not mutate containers if limits are nil", func() {
 			pod.Spec.Containers[0].Resources.Limits = nil
+
 			mutateContainers(pod.Spec.Containers, pod, 0.5, 0.5)
 
 			Expect(pod.Spec.Containers[0].Resources.Requests).To(BeEmpty())
 		})
+
+		It("should initialize requests if requests is nil", func() {
+			pod.Spec.Containers[0].Resources.Requests = nil
+
+			mutateContainers(pod.Spec.Containers, pod, 0.5, 0.5)
+
+			Expect(pod.Spec.Containers[0].Resources.Requests).To(Equal(expectedRequests))
+		})
+
+		It("should be idempotent when applied multiple times", func() {
+			mutateContainers(pod.Spec.Containers, pod, 0.5, 0.5)
+
+			first := pod.Spec.Containers[0].Resources.Requests.Cpu().MilliValue()
+
+			mutateContainers(pod.Spec.Containers, pod, 0.5, 0.5)
+
+			second := pod.Spec.Containers[0].Resources.Requests.Cpu().MilliValue()
+
+			Expect(first).To(Equal(second))
+		})
+
 	})
 
 	Describe("makeOvercommit", func() {
@@ -74,6 +98,7 @@ var _ = Describe("Overcommit", func() {
 	})
 
 	Describe("Overcommit", func() {
+
 		BeforeEach(func() {
 			os.Setenv("OVERCOMMIT_CLASS_NAME", "test-class")
 		})
@@ -86,7 +111,27 @@ var _ = Describe("Overcommit", func() {
 			Overcommit(pod, recorder, k8sClient)
 
 			Expect(pod.Spec.Containers[0].Resources.Requests).To(Equal(expectedRequests))
-
 		})
+
 	})
+
+	Describe("Resize behaviour", func() {
+
+		It("should recompute requests when limits change", func() {
+
+			mutateContainers(pod.Spec.Containers, pod, 0.5, 0.5)
+
+			Expect(pod.Spec.Containers[0].Resources.Requests).To(Equal(expectedRequests))
+
+			pod.Spec.Containers[0].Resources.Limits[corev1.ResourceCPU] = resource.MustParse("2")
+
+			mutateContainers(pod.Spec.Containers, pod, 0.5, 0.5)
+
+			Expect(
+				pod.Spec.Containers[0].Resources.Requests.Cpu().MilliValue(),
+			).To(Equal(int64(1000)))
+		})
+
+	})
+
 })
