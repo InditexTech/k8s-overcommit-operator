@@ -67,7 +67,7 @@ var _ = Describe("Overcommit", func() {
 
 	Describe("makeOvercommit", func() {
 		It("should apply overcommit to containers", func() {
-			makeOvercommit(pod, 0.5, 0.5)
+			Overcommit(pod, recorder, k8sClient)
 
 			Expect(pod.Spec.Containers[0].Resources.Requests).To(Equal(expectedRequests))
 		})
