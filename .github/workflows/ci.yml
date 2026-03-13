@@ -22,8 +22,8 @@ jobs:
 
     - name: Install kubectl, helm, kind and kuttl ⬇️
       env:
-        KUTTL_VERSION: '0.20.0'
-        KUTTL_PLUGIN_FILENAME: 'kubectl-kuttl_0.20.0_linux_x86_64'
+        KUTTL_VERSION: '0.25.0'
+        KUTTL_PLUGIN_FILENAME: 'kubectl-kuttl_0.25.0_linux_x86_64'
       run: bash hack/install-dependencies.sh
 
     - name: Run kind ⚙️
