@@ -7,6 +7,7 @@ package overcommit
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/InditexTech/k8s-overcommit-operator/internal/metrics"
@@ -15,6 +16,11 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+const (
+	// AnnotationOvercommitApplied is set on pods after overcommit mutation to ensure idempotency.
+	AnnotationOvercommitApplied = "overcommit.inditex.dev/applied"
 )
 
 var podlog = logf.Log.WithName("overcommit")
@@ -47,8 +53,17 @@ func mutateContainers(containers []corev1.Container, pod *corev1.Pod, cpuValue f
 
 func Overcommit(pod *corev1.Pod, recorder record.EventRecorder, client client.Client) {
 	ctx := context.Background()
+	className := os.Getenv("OVERCOMMIT_CLASS_NAME")
 
-	metrics.K8sOvercommitOperatorPodsRequestedTotal.WithLabelValues(os.Getenv("OVERCOMMIT_CLASS_NAME")).Inc()
+	metrics.K8sOvercommitOperatorPodsRequestedTotal.WithLabelValues(className).Inc()
+
+	// Idempotency: skip if this pod was already mutated by this class
+	if pod.Annotations != nil {
+		if applied, ok := pod.Annotations[AnnotationOvercommitApplied]; ok && applied == className {
+			podlog.Info("Pod already mutated by this overcommit class, skipping", "pod", pod.Name, "class", className)
+			return
+		}
+	}
 
 	cpuValue, memoryValue := checkOvercommitType(ctx, *pod, client)
 
@@ -59,7 +74,10 @@ func Overcommit(pod *corev1.Pod, recorder record.EventRecorder, client client.Cl
 		mutateContainers(pod.Spec.InitContainers, pod, cpuValue, memoryValue)
 	}
 
-	metrics.K8sOvercommitOperatorMutatedPodsTotal.WithLabelValues(os.Getenv("OVERCOMMIT_CLASS_NAME")).Inc()
+	// Mark the pod as mutated to prevent double-application on reinvocation
+	setOvercommitAnnotation(pod, className, cpuValue, memoryValue)
+
+	metrics.K8sOvercommitOperatorMutatedPodsTotal.WithLabelValues(className).Inc()
 
 	recorder.Eventf(
 		pod,
@@ -67,7 +85,7 @@ func Overcommit(pod *corev1.Pod, recorder record.EventRecorder, client client.Cl
 		"OvercommitApplied",
 		"Applied overcommit to Pod '%s': OvercommitClass = %s, CPU Overcommit = %.2f, Memory Overcommit = %.2f",
 		pod.Name,
-		os.Getenv("OVERCOMMIT_CLASS_NAME"),
+		className,
 		cpuValue,
 		memoryValue,
 	)
@@ -75,15 +93,19 @@ func Overcommit(pod *corev1.Pod, recorder record.EventRecorder, client client.Cl
 
 func OvercommitOnResize(pod *corev1.Pod, recorder record.EventRecorder, client client.Client) {
 	ctx := context.Background()
+	className := os.Getenv("OVERCOMMIT_CLASS_NAME")
 
-	metrics.K8sOvercommitOperatorPodsRequestedTotal.WithLabelValues(os.Getenv("OVERCOMMIT_CLASS_NAME")).Inc()
+	metrics.K8sOvercommitOperatorPodsRequestedTotal.WithLabelValues(className).Inc()
 
 	cpuValue, memoryValue := checkOvercommitType(ctx, *pod, client)
 
 	// En resize: solo containers normales.
 	mutateContainers(pod.Spec.Containers, pod, cpuValue, memoryValue)
 
-	metrics.K8sOvercommitOperatorMutatedPodsTotal.WithLabelValues(os.Getenv("OVERCOMMIT_CLASS_NAME")).Inc()
+	// Update annotation with new values after resize
+	setOvercommitAnnotation(pod, className, cpuValue, memoryValue)
+
+	metrics.K8sOvercommitOperatorMutatedPodsTotal.WithLabelValues(className).Inc()
 
 	recorder.Eventf(
 		pod,
@@ -91,8 +113,18 @@ func OvercommitOnResize(pod *corev1.Pod, recorder record.EventRecorder, client c
 		"OvercommitAppliedOnResize",
 		"Applied overcommit on resize to Pod '%s': OvercommitClass = %s, CPU Overcommit = %.2f, Memory Overcommit = %.2f",
 		pod.Name,
-		os.Getenv("OVERCOMMIT_CLASS_NAME"),
+		className,
 		cpuValue,
 		memoryValue,
 	)
+}
+
+// setOvercommitAnnotation marks the pod as having been mutated by the overcommit webhook.
+func setOvercommitAnnotation(pod *corev1.Pod, className string, cpuValue, memoryValue float64) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+	pod.Annotations[AnnotationOvercommitApplied] = className
+	pod.Annotations["overcommit.inditex.dev/cpu"] = fmt.Sprintf("%.4f", cpuValue)
+	pod.Annotations["overcommit.inditex.dev/memory"] = fmt.Sprintf("%.4f", memoryValue)
 }
