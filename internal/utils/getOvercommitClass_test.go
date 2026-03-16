@@ -82,7 +82,7 @@ var _ = Describe("GetDefaultSpec", func() {
 
 	It("should retrieve the default OvercommitClassSpec correctly", func() {
 		// Try the GetDefaultSpec function
-		spec, err := GetDefaultSpec(k8sClient)
+		spec, err := GetDefaultSpec(context.Background(), k8sClient)
 		Expect(err).NotTo(HaveOccurred(), "Failed to get default OvercommitClassSpec")
 		Expect(spec).NotTo(BeNil(), "Spec should not be nil")
 		Expect(spec.IsDefault).To(BeTrue(), "Spec.IsDefault should be true")

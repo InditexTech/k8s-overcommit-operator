@@ -150,7 +150,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		serviceAccountName, err := utils.GetPodServiceAccount(mgr.GetAPIReader())
+		serviceAccountName, err := utils.GetPodServiceAccount(ctx, mgr.GetAPIReader())
 		if err != nil {
 			setupLog.Error(err, "unable to get pod service account")
 			os.Exit(1)

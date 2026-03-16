@@ -51,8 +51,7 @@ func mutateContainers(containers []corev1.Container, pod *corev1.Pod, cpuValue f
 	}
 }
 
-func Overcommit(pod *corev1.Pod, recorder record.EventRecorder, client client.Client) {
-	ctx := context.Background()
+func Overcommit(ctx context.Context, pod *corev1.Pod, recorder record.EventRecorder, client client.Client) {
 	className := os.Getenv("OVERCOMMIT_CLASS_NAME")
 
 	metrics.K8sOvercommitOperatorPodsRequestedTotal.WithLabelValues(className).Inc()
@@ -91,8 +90,7 @@ func Overcommit(pod *corev1.Pod, recorder record.EventRecorder, client client.Cl
 	)
 }
 
-func OvercommitOnResize(pod *corev1.Pod, recorder record.EventRecorder, client client.Client) {
-	ctx := context.Background()
+func OvercommitOnResize(ctx context.Context, pod *corev1.Pod, recorder record.EventRecorder, client client.Client) {
 	className := os.Getenv("OVERCOMMIT_CLASS_NAME")
 
 	metrics.K8sOvercommitOperatorPodsRequestedTotal.WithLabelValues(className).Inc()

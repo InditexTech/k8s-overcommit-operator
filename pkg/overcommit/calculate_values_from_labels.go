@@ -40,7 +40,7 @@ func getNamespaceOvercommit(ctx context.Context, pod *corev1.Pod, client client.
 	}
 
 	podlog.Info("Overcommit class not found in the namespace, using the default", "namespace", ns.Name)
-	defaultClass, err := utils.GetDefaultSpec(client)
+	defaultClass, err := utils.GetDefaultSpec(ctx, client)
 	if err != nil {
 		podlog.Error(err, "Error getting the default overcommit class")
 		return 1.0, 1.0
