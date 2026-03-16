@@ -70,9 +70,14 @@ func isClassDefault(class OvercommitClass, client client.Client) error {
 }
 
 func checkIsRegexValid(regex string) error {
+	// Limit regex length to prevent ReDoS (catastrophic backtracking)
+	const maxRegexLen = 512
+	if len(regex) > maxRegexLen {
+		return fmt.Errorf("regex is too long (%d chars), maximum allowed is %d", len(regex), maxRegexLen)
+	}
 	_, err := regexp.Compile(regex)
 	if err != nil {
-		return errors.New("Error: the regex is not valid")
+		return fmt.Errorf("invalid regex for excludedNamespaces: %w", err)
 	}
 	return nil
 }
