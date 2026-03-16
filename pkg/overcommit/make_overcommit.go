@@ -68,7 +68,7 @@ func Overcommit(ctx context.Context, pod *corev1.Pod, recorder record.EventRecor
 
 	mutateContainers(pod.Spec.Containers, pod, cpuValue, memoryValue)
 
-	// comportamiento actual para CREATE/UPDATE normales
+	// Also mutate init containers on regular CREATE/UPDATE
 	if len(pod.Spec.InitContainers) > 0 {
 		mutateContainers(pod.Spec.InitContainers, pod, cpuValue, memoryValue)
 	}
@@ -97,7 +97,7 @@ func OvercommitOnResize(ctx context.Context, pod *corev1.Pod, recorder record.Ev
 
 	cpuValue, memoryValue := checkOvercommitType(ctx, *pod, client)
 
-	// En resize: solo containers normales.
+	// On resize: only mutate regular containers, skip init containers.
 	mutateContainers(pod.Spec.Containers, pod, cpuValue, memoryValue)
 
 	// Update annotation with new values after resize
