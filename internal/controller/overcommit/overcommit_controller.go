@@ -390,11 +390,8 @@ func (r *OvercommitReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		// Don't fail the reconciliation for status update errors
 	}
 
-	// Only requeue periodically for status checks, not immediately
-	logger.Info("Reconciliation completed successfully", "nextReconcile", "10 seconds", "time", time.Now().Format("15:04:05"))
-	return ctrl.Result{
-		RequeueAfter: time.Second * 10,
-	}, nil
+	logger.Info("Reconciliation completed successfully", "time", time.Now().Format("15:04:05"))
+	return ctrl.Result{}, nil
 }
 
 // +kubebuilder:rbac:groups=apps, resources=deployments;replicasets,verbs=get;list;watch;create;update;patch;delete
