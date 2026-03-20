@@ -147,10 +147,10 @@ func CreateCertificate(name string, svc corev1.Service) *certmanager.Certificate
 		Spec: certmanager.CertificateSpec{
 			SecretName: name + "-webhook-secret",
 			Duration: &metav1.Duration{
-				Duration: 87600 * time.Hour,
+				Duration: 8760 * time.Hour, // 1 year
 			},
 			RenewBefore: &metav1.Duration{
-				Duration: 720 * time.Hour,
+				Duration: 720 * time.Hour, // 30 days
 			},
 			DNSNames: []string{
 				svc.Name + "." + svc.Namespace + ".svc",

@@ -6,6 +6,7 @@
 package overcommit
 
 import (
+	"context"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -91,7 +92,7 @@ var _ = Describe("Overcommit", func() {
 
 	Describe("makeOvercommit", func() {
 		It("should apply overcommit to containers", func() {
-			Overcommit(pod, recorder, k8sClient)
+			Overcommit(context.Background(), pod, recorder, k8sClient)
 
 			Expect(pod.Spec.Containers[0].Resources.Requests).To(Equal(expectedRequests))
 		})
@@ -108,7 +109,7 @@ var _ = Describe("Overcommit", func() {
 		})
 
 		It("should mutate pod containers and record an event", func() {
-			Overcommit(pod, recorder, k8sClient)
+			Overcommit(context.Background(), pod, recorder, k8sClient)
 
 			Expect(pod.Spec.Containers[0].Resources.Requests).To(Equal(expectedRequests))
 		})

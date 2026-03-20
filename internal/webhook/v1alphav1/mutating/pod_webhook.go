@@ -51,11 +51,11 @@ func (d *PodCustomDefaulter) Default(ctx context.Context, obj runtime.Object) er
 	}
 
 	if isResize {
-		overcommit.OvercommitOnResize(pod, d.Recorder, d.Client)
+		overcommit.OvercommitOnResize(ctx, pod, d.Recorder, d.Client)
 		return nil
 	}
 
-	overcommit.Overcommit(pod, d.Recorder, d.Client)
+	overcommit.Overcommit(ctx, pod, d.Recorder, d.Client)
 	return nil
 }
 

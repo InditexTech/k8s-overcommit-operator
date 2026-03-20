@@ -45,14 +45,14 @@ func GetOvercommitClassSpec(ctx context.Context, name string, k8sClient client.C
 	return &overcommitClass.Spec, nil
 }
 
-func GetDefaultSpec(k8sClient client.Client) (*overcommit.OvercommitClassSpec, error) {
+func GetDefaultSpec(ctx context.Context, k8sClient client.Client) (*overcommit.OvercommitClassSpec, error) {
 	if k8sClient == nil {
 		return nil, errors.New("client parameter cannot be nil")
 	}
 
 	// List all OvercommitClass
 	var overcommitClasses overcommit.OvercommitClassList
-	if err := k8sClient.List(context.Background(), &overcommitClasses); err != nil {
+	if err := k8sClient.List(ctx, &overcommitClasses); err != nil {
 		return nil, fmt.Errorf("error listing OvercommitClass: %w", err)
 	}
 

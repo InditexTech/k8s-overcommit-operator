@@ -393,9 +393,6 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	// Only requeue periodically for status checks, not immediately
-	logger.Info("Reconciliation completed successfully", "nextReconcile", "10 seconds", "time", time.Now().Format("15:04:05"))
-	return ctrl.Result{
-		RequeueAfter: 10 * time.Second,
-	}, nil
+	logger.Info("Reconciliation completed successfully", "time", time.Now().Format("15:04:05"))
+	return ctrl.Result{}, nil
 }

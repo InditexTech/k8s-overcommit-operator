@@ -58,7 +58,7 @@ func GetPodImageDetails(ctx context.Context, client client.Reader) (string, stri
 	return "", "", "", fmt.Errorf("no containers found in pod")
 }
 
-func GetPodServiceAccount(client client.Reader) (string, error) {
+func GetPodServiceAccount(ctx context.Context, client client.Reader) (string, error) {
 	podName := os.Getenv("POD_NAME")
 	podNamespace := os.Getenv("POD_NAMESPACE")
 
@@ -67,7 +67,7 @@ func GetPodServiceAccount(client client.Reader) (string, error) {
 	}
 
 	pod := &corev1.Pod{}
-	err := client.Get(context.TODO(), types.NamespacedName{
+	err := client.Get(ctx, types.NamespacedName{
 		Name:      podName,
 		Namespace: podNamespace,
 	}, pod)

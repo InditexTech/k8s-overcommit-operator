@@ -123,7 +123,7 @@ func TestCreateCertificate(t *testing.T) {
 		t.Errorf("Expected secret name 'test-class-webhook-secret', got '%s'", certificate.Spec.SecretName)
 	}
 
-	expectedDuration := 87600 * time.Hour
+	expectedDuration := 8760 * time.Hour
 	if certificate.Spec.Duration.Duration != expectedDuration {
 		t.Errorf("Expected duration '%v', got '%v'", expectedDuration, certificate.Spec.Duration.Duration)
 	}
