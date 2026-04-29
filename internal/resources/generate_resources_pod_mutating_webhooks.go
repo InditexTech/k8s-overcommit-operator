@@ -28,21 +28,21 @@ func CreateDeployment(class overcommit.OvercommitClass) *appsv1.Deployment {
 	}
 
 	labels := class.Spec.Labels
-	labels["app"] = class.ObjectMeta.Name + "-overcommit-webhook"
+	labels["app"] = class.Name + "-overcommit-webhook"
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      class.ObjectMeta.Name + "-overcommit-webhook",
+			Name:      class.Name + "-overcommit-webhook",
 			Namespace: os.Getenv("POD_NAMESPACE"),
 			Labels: map[string]string{
-				"app": class.ObjectMeta.Name + "-overcommit-webhook",
+				"app": class.Name + "-overcommit-webhook",
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": class.ObjectMeta.Name + "-overcommit-webhook",
+					"app": class.Name + "-overcommit-webhook",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
@@ -156,7 +156,7 @@ func CreateCertificate(name string, svc corev1.Service) *certmanager.Certificate
 				svc.Name + "." + svc.Namespace + ".svc",
 				svc.Name + "." + svc.Namespace + ".svc.cluster.local",
 			},
-			IssuerRef: certmanagermeta.ObjectReference{
+			IssuerRef: certmanagermeta.IssuerReference{
 				Name: "k8s-overcommit-issuer",
 				Kind: "Issuer",
 			},
@@ -188,16 +188,15 @@ func getMatchCondition(excludedNamespaces string) []admissionv1.MatchCondition {
 func getObjectSelector(isDefault bool, label string, name string) *metav1.LabelSelector {
 	if isDefault {
 		return getSelectorClassNotExist(label)
-	} else {
-		return &metav1.LabelSelector{
-			MatchExpressions: []metav1.LabelSelectorRequirement{
-				{
-					Key:      label,
-					Operator: metav1.LabelSelectorOpIn,
-					Values:   []string{name},
-				},
+	}
+	return &metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{
+				Key:      label,
+				Operator: metav1.LabelSelectorOpIn,
+				Values:   []string{name},
 			},
-		}
+		},
 	}
 }
 
@@ -237,12 +236,12 @@ func CreateMutatingWebhookConfiguration(class overcommit.OvercommitClass, svc co
 		ObjectMeta: metav1.ObjectMeta{
 			Name: class.Name + "-overcommit-webhook",
 			Annotations: map[string]string{
-				"cert-manager.io/inject-ca-from": cert.ObjectMeta.Namespace + "/" + cert.Name,
+				"cert-manager.io/inject-ca-from": cert.Namespace + "/" + cert.Name,
 			},
 		},
 		Webhooks: []admissionv1.MutatingWebhook{
 			{
-				Name: class.ObjectMeta.Name + "-overcommit.inditex.dev",
+				Name: class.Name + "-overcommit.inditex.dev",
 				ClientConfig: admissionv1.WebhookClientConfig{
 					Service: &admissionv1.ServiceReference{
 						Name:      svc.Name,
@@ -263,7 +262,7 @@ func CreateMutatingWebhookConfiguration(class overcommit.OvercommitClass, svc co
 
 	if class.Spec.IsDefault {
 		webhookConfig.Webhooks = append(webhookConfig.Webhooks, admissionv1.MutatingWebhook{
-			Name: "default-" + class.ObjectMeta.Name + "-overcommit.inditex.dev",
+			Name: "default-" + class.Name + "-overcommit.inditex.dev",
 			ClientConfig: admissionv1.WebhookClientConfig{
 				Service: &admissionv1.ServiceReference{
 					Name:      svc.Name,

@@ -25,7 +25,7 @@ const (
 
 var podlog = logf.Log.WithName("overcommit")
 
-func mutateContainers(containers []corev1.Container, pod *corev1.Pod, cpuValue float64, memoryValue float64) {
+func mutateContainers(containers []corev1.Container, cpuValue float64, memoryValue float64) {
 	for i, container := range containers {
 		limits := container.Resources.Limits
 		requests := container.Resources.Requests
@@ -66,11 +66,11 @@ func Overcommit(ctx context.Context, pod *corev1.Pod, recorder record.EventRecor
 
 	cpuValue, memoryValue := checkOvercommitType(ctx, *pod, client)
 
-	mutateContainers(pod.Spec.Containers, pod, cpuValue, memoryValue)
+	mutateContainers(pod.Spec.Containers, cpuValue, memoryValue)
 
 	// Also mutate init containers on regular CREATE/UPDATE
 	if len(pod.Spec.InitContainers) > 0 {
-		mutateContainers(pod.Spec.InitContainers, pod, cpuValue, memoryValue)
+		mutateContainers(pod.Spec.InitContainers, cpuValue, memoryValue)
 	}
 
 	// Mark the pod as mutated to prevent double-application on reinvocation
@@ -98,7 +98,7 @@ func OvercommitOnResize(ctx context.Context, pod *corev1.Pod, recorder record.Ev
 	cpuValue, memoryValue := checkOvercommitType(ctx, *pod, client)
 
 	// On resize: only mutate regular containers, skip init containers.
-	mutateContainers(pod.Spec.Containers, pod, cpuValue, memoryValue)
+	mutateContainers(pod.Spec.Containers, cpuValue, memoryValue)
 
 	// Update annotation with new values after resize
 	setOvercommitAnnotation(pod, className, cpuValue, memoryValue)

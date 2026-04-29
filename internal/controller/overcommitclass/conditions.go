@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package controller implements the OvercommitClass reconciler.
 package controller
 
 import (

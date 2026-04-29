@@ -199,11 +199,10 @@ func (r *OvercommitReconciler) updateOvercommitStatusSafely(ctx context.Context)
 					"backoff", backoffDuration.String())
 				time.Sleep(backoffDuration)
 				continue
-			} else {
-				// Non-conflict error, return immediately
-				logger.Error(err, "Non-conflict error during status update")
-				return err
 			}
+			// Non-conflict error, return immediately
+			logger.Error(err, "Non-conflict error during status update")
+			return err
 		}
 
 		// Success

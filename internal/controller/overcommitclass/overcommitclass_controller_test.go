@@ -7,6 +7,7 @@ package controller
 
 import (
 	"os"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -65,22 +66,22 @@ var _ = Describe("OvercommitClass Controller", func() {
 			deployment := &appsv1.Deployment{}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, client.ObjectKey{Name: "test-overcommit-webhook", Namespace: os.Getenv("POD_NAMESPACE")}, deployment)
-			}).Should(Succeed())
+			}, 10*time.Second, 250*time.Millisecond).Should(Succeed())
 
 			service := &corev1.Service{}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, client.ObjectKey{Name: "test-webhook-service", Namespace: os.Getenv("POD_NAMESPACE")}, service)
-			}).Should(Succeed())
+			}, 10*time.Second, 250*time.Millisecond).Should(Succeed())
 
 			certificate := &certmanager.Certificate{}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, client.ObjectKey{Name: "test-webhook-certificate", Namespace: os.Getenv("POD_NAMESPACE")}, certificate)
-			}).Should(Succeed())
+			}, 10*time.Second, 250*time.Millisecond).Should(Succeed())
 
 			webhookConfig := &admissionv1.MutatingWebhookConfiguration{}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, client.ObjectKey{Name: "test-overcommit-webhook"}, webhookConfig)
-			}).Should(Succeed())
+			}, 10*time.Second, 250*time.Millisecond).Should(Succeed())
 		})
 	})
 })

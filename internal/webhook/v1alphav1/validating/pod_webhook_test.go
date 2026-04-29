@@ -25,7 +25,7 @@ var _ = Describe("PodCustomValidator Webhook", func() {
 
 	BeforeEach(func() {
 		validator = &PodCustomValidator{}
-		validator.InjectClient(k8sClient)
+		validator.Client = k8sClient
 		ctx = context.Background()
 
 		// Create a sample Pod object

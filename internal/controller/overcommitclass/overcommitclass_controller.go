@@ -148,57 +148,56 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if deployment.CreationTimestamp.IsZero() {
 			// New deployment, set everything
 			deployment.Spec = updatedDeployment.Spec
-			deployment.ObjectMeta.Labels = updatedDeployment.ObjectMeta.Labels
-			deployment.ObjectMeta.Annotations = updatedDeployment.ObjectMeta.Annotations
+			deployment.Labels = updatedDeployment.Labels
+			deployment.Annotations = updatedDeployment.Annotations
 			return controllerutil.SetControllerReference(overcommitClass, deployment, r.Scheme)
-		} else {
-			// Existing deployment, only update specific fields if needed
-			updated := false
+		}
+		// Existing deployment, only update specific fields if needed
+		updated := false
 
-			// Check if image changed
-			if len(updatedDeployment.Spec.Template.Spec.Containers) > 0 && len(deployment.Spec.Template.Spec.Containers) > 0 {
-				if updatedDeployment.Spec.Template.Spec.Containers[0].Image != deployment.Spec.Template.Spec.Containers[0].Image {
-					deployment.Spec.Template.Spec.Containers[0].Image = updatedDeployment.Spec.Template.Spec.Containers[0].Image
-					updated = true
-				}
-			}
-
-			// Update environment variables if they changed
-			if len(updatedDeployment.Spec.Template.Spec.Containers) > 0 && len(deployment.Spec.Template.Spec.Containers) > 0 {
-				if !envVarsEqual(updatedDeployment.Spec.Template.Spec.Containers[0].Env, deployment.Spec.Template.Spec.Containers[0].Env) {
-					deployment.Spec.Template.Spec.Containers[0].Env = updatedDeployment.Spec.Template.Spec.Containers[0].Env
-					updated = true
-				}
-			}
-
-			// Update template annotations if they changed
-			if !mapsEqual(updatedDeployment.Spec.Template.Annotations, deployment.Spec.Template.Annotations) {
-				deployment.Spec.Template.Annotations = updatedDeployment.Spec.Template.Annotations
+		// Check if image changed
+		if len(updatedDeployment.Spec.Template.Spec.Containers) > 0 && len(deployment.Spec.Template.Spec.Containers) > 0 {
+			if updatedDeployment.Spec.Template.Spec.Containers[0].Image != deployment.Spec.Template.Spec.Containers[0].Image {
+				deployment.Spec.Template.Spec.Containers[0].Image = updatedDeployment.Spec.Template.Spec.Containers[0].Image
 				updated = true
 			}
+		}
 
-			// Update template labels if they changed
-			if !mapsEqual(updatedDeployment.Spec.Template.Labels, deployment.Spec.Template.Labels) {
-				deployment.Spec.Template.Labels = updatedDeployment.Spec.Template.Labels
+		// Update environment variables if they changed
+		if len(updatedDeployment.Spec.Template.Spec.Containers) > 0 && len(deployment.Spec.Template.Spec.Containers) > 0 {
+			if !envVarsEqual(updatedDeployment.Spec.Template.Spec.Containers[0].Env, deployment.Spec.Template.Spec.Containers[0].Env) {
+				deployment.Spec.Template.Spec.Containers[0].Env = updatedDeployment.Spec.Template.Spec.Containers[0].Env
 				updated = true
 			}
+		}
 
-			// Update nodeSelector if it changed
-			if !mapsEqual(updatedDeployment.Spec.Template.Spec.NodeSelector, deployment.Spec.Template.Spec.NodeSelector) {
-				deployment.Spec.Template.Spec.NodeSelector = updatedDeployment.Spec.Template.Spec.NodeSelector
-				updated = true
-			}
+		// Update template annotations if they changed
+		if !mapsEqual(updatedDeployment.Spec.Template.Annotations, deployment.Spec.Template.Annotations) {
+			deployment.Spec.Template.Annotations = updatedDeployment.Spec.Template.Annotations
+			updated = true
+		}
 
-			// Update tolerations if they changed
-			if !utils.TolerationsEqual(ctx, updatedDeployment.Spec.Template.Spec.Tolerations, deployment.Spec.Template.Spec.Tolerations) {
-				deployment.Spec.Template.Spec.Tolerations = updatedDeployment.Spec.Template.Spec.Tolerations
-				updated = true
-			}
+		// Update template labels if they changed
+		if !mapsEqual(updatedDeployment.Spec.Template.Labels, deployment.Spec.Template.Labels) {
+			deployment.Spec.Template.Labels = updatedDeployment.Spec.Template.Labels
+			updated = true
+		}
 
-			// Only set controller reference if we actually updated something
-			if updated {
-				return controllerutil.SetControllerReference(overcommitClass, deployment, r.Scheme)
-			}
+		// Update nodeSelector if it changed
+		if !mapsEqual(updatedDeployment.Spec.Template.Spec.NodeSelector, deployment.Spec.Template.Spec.NodeSelector) {
+			deployment.Spec.Template.Spec.NodeSelector = updatedDeployment.Spec.Template.Spec.NodeSelector
+			updated = true
+		}
+
+		// Update tolerations if they changed
+		if !utils.TolerationsEqual(ctx, updatedDeployment.Spec.Template.Spec.Tolerations, deployment.Spec.Template.Spec.Tolerations) {
+			deployment.Spec.Template.Spec.Tolerations = updatedDeployment.Spec.Template.Spec.Tolerations
+			updated = true
+		}
+
+		// Only set controller reference if we actually updated something
+		if updated {
+			return controllerutil.SetControllerReference(overcommitClass, deployment, r.Scheme)
 		}
 		return nil
 	})
@@ -216,47 +215,46 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if service.CreationTimestamp.IsZero() {
 			// New service, set everything
 			service.Spec = updatedService.Spec
-			service.ObjectMeta.Labels = updatedService.ObjectMeta.Labels
-			service.ObjectMeta.Annotations = updatedService.ObjectMeta.Annotations
+			service.Labels = updatedService.Labels
+			service.Annotations = updatedService.Annotations
 			return controllerutil.SetControllerReference(overcommitClass, service, r.Scheme)
-		} else {
-			// Existing service, only update specific fields if needed
-			updated := false
+		}
+		// Existing service, only update specific fields if needed
+		updated := false
 
-			// Check if selector changed
-			if !mapsEqual(updatedService.Spec.Selector, service.Spec.Selector) {
-				service.Spec.Selector = updatedService.Spec.Selector
-				updated = true
-			}
+		// Check if selector changed
+		if !mapsEqual(updatedService.Spec.Selector, service.Spec.Selector) {
+			service.Spec.Selector = updatedService.Spec.Selector
+			updated = true
+		}
 
-			// Check if ports changed
-			if !portsEqual(updatedService.Spec.Ports, service.Spec.Ports) {
-				service.Spec.Ports = updatedService.Spec.Ports
-				updated = true
-			}
+		// Check if ports changed
+		if !portsEqual(updatedService.Spec.Ports, service.Spec.Ports) {
+			service.Spec.Ports = updatedService.Spec.Ports
+			updated = true
+		}
 
-			// Check if service type changed
-			if updatedService.Spec.Type != service.Spec.Type {
-				service.Spec.Type = updatedService.Spec.Type
-				updated = true
-			}
+		// Check if service type changed
+		if updatedService.Spec.Type != service.Spec.Type {
+			service.Spec.Type = updatedService.Spec.Type
+			updated = true
+		}
 
-			// Update annotations if they changed
-			if !mapsEqual(updatedService.ObjectMeta.Annotations, service.ObjectMeta.Annotations) {
-				service.ObjectMeta.Annotations = updatedService.ObjectMeta.Annotations
-				updated = true
-			}
+		// Update annotations if they changed
+		if !mapsEqual(updatedService.Annotations, service.Annotations) {
+			service.Annotations = updatedService.Annotations
+			updated = true
+		}
 
-			// Update labels if they changed
-			if !mapsEqual(updatedService.ObjectMeta.Labels, service.ObjectMeta.Labels) {
-				service.ObjectMeta.Labels = updatedService.ObjectMeta.Labels
-				updated = true
-			}
+		// Update labels if they changed
+		if !mapsEqual(updatedService.Labels, service.Labels) {
+			service.Labels = updatedService.Labels
+			updated = true
+		}
 
-			// Only set controller reference if we actually updated something
-			if updated {
-				return controllerutil.SetControllerReference(overcommitClass, service, r.Scheme)
-			}
+		// Only set controller reference if we actually updated something
+		if updated {
+			return controllerutil.SetControllerReference(overcommitClass, service, r.Scheme)
 		}
 		return nil
 	})
@@ -274,48 +272,47 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		if certificate.CreationTimestamp.IsZero() {
 			// New certificate, set everything
 			certificate.Spec = updatedCertificate.Spec
-			certificate.ObjectMeta.Labels = updatedCertificate.ObjectMeta.Labels
-			certificate.ObjectMeta.Annotations = updatedCertificate.ObjectMeta.Annotations
+			certificate.Labels = updatedCertificate.Labels
+			certificate.Annotations = updatedCertificate.Annotations
 			return controllerutil.SetControllerReference(overcommitClass, certificate, r.Scheme)
-		} else {
-			// Existing certificate, only update specific fields if needed
-			updated := false
+		}
+		// Existing certificate, only update specific fields if needed
+		updated := false
 
-			// Check if DNS names changed
-			if !slicesEqual(updatedCertificate.Spec.DNSNames, certificate.Spec.DNSNames) {
-				certificate.Spec.DNSNames = updatedCertificate.Spec.DNSNames
-				updated = true
-			}
+		// Check if DNS names changed
+		if !slicesEqual(updatedCertificate.Spec.DNSNames, certificate.Spec.DNSNames) {
+			certificate.Spec.DNSNames = updatedCertificate.Spec.DNSNames
+			updated = true
+		}
 
-			// Check if issuer ref changed
-			if updatedCertificate.Spec.IssuerRef.Name != certificate.Spec.IssuerRef.Name ||
-				updatedCertificate.Spec.IssuerRef.Kind != certificate.Spec.IssuerRef.Kind {
-				certificate.Spec.IssuerRef = updatedCertificate.Spec.IssuerRef
-				updated = true
-			}
+		// Check if issuer ref changed
+		if updatedCertificate.Spec.IssuerRef.Name != certificate.Spec.IssuerRef.Name ||
+			updatedCertificate.Spec.IssuerRef.Kind != certificate.Spec.IssuerRef.Kind {
+			certificate.Spec.IssuerRef = updatedCertificate.Spec.IssuerRef
+			updated = true
+		}
 
-			// Check if secret name changed
-			if updatedCertificate.Spec.SecretName != certificate.Spec.SecretName {
-				certificate.Spec.SecretName = updatedCertificate.Spec.SecretName
-				updated = true
-			}
+		// Check if secret name changed
+		if updatedCertificate.Spec.SecretName != certificate.Spec.SecretName {
+			certificate.Spec.SecretName = updatedCertificate.Spec.SecretName
+			updated = true
+		}
 
-			// Update annotations if they changed
-			if !mapsEqual(updatedCertificate.ObjectMeta.Annotations, certificate.ObjectMeta.Annotations) {
-				certificate.ObjectMeta.Annotations = updatedCertificate.ObjectMeta.Annotations
-				updated = true
-			}
+		// Update annotations if they changed
+		if !mapsEqual(updatedCertificate.Annotations, certificate.Annotations) {
+			certificate.Annotations = updatedCertificate.Annotations
+			updated = true
+		}
 
-			// Update labels if they changed
-			if !mapsEqual(updatedCertificate.ObjectMeta.Labels, certificate.ObjectMeta.Labels) {
-				certificate.ObjectMeta.Labels = updatedCertificate.ObjectMeta.Labels
-				updated = true
-			}
+		// Update labels if they changed
+		if !mapsEqual(updatedCertificate.Labels, certificate.Labels) {
+			certificate.Labels = updatedCertificate.Labels
+			updated = true
+		}
 
-			// Only set controller reference if we actually updated something
-			if updated {
-				return controllerutil.SetControllerReference(overcommitClass, certificate, r.Scheme)
-			}
+		// Only set controller reference if we actually updated something
+		if updated {
+			return controllerutil.SetControllerReference(overcommitClass, certificate, r.Scheme)
 		}
 		return nil
 	})
@@ -336,44 +333,43 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			webhookConfig.Labels = updatedWebhookConfig.Labels
 			webhookConfig.Webhooks = updatedWebhookConfig.Webhooks
 			return controllerutil.SetControllerReference(overcommitClass, webhookConfig, r.Scheme)
+		}
+		// Existing webhook config, only update specific fields if needed
+		updated := false
+
+		// Update annotations if they changed
+		if !mapsEqual(updatedWebhookConfig.Annotations, webhookConfig.Annotations) {
+			webhookConfig.Annotations = updatedWebhookConfig.Annotations
+			updated = true
+		}
+
+		// Update labels if they changed
+		if !mapsEqual(updatedWebhookConfig.Labels, webhookConfig.Labels) {
+			webhookConfig.Labels = updatedWebhookConfig.Labels
+			updated = true
+		}
+
+		// Check if webhooks changed (simplified comparison)
+		if len(updatedWebhookConfig.Webhooks) != len(webhookConfig.Webhooks) {
+			webhookConfig.Webhooks = updatedWebhookConfig.Webhooks
+			updated = true
 		} else {
-			// Existing webhook config, only update specific fields if needed
-			updated := false
-
-			// Update annotations if they changed
-			if !mapsEqual(updatedWebhookConfig.Annotations, webhookConfig.Annotations) {
-				webhookConfig.Annotations = updatedWebhookConfig.Annotations
-				updated = true
-			}
-
-			// Update labels if they changed
-			if !mapsEqual(updatedWebhookConfig.Labels, webhookConfig.Labels) {
-				webhookConfig.Labels = updatedWebhookConfig.Labels
-				updated = true
-			}
-
-			// Check if webhooks changed (simplified comparison)
-			if len(updatedWebhookConfig.Webhooks) != len(webhookConfig.Webhooks) {
-				webhookConfig.Webhooks = updatedWebhookConfig.Webhooks
-				updated = true
-			} else {
-				// Compare each webhook
-				for i, updatedWebhook := range updatedWebhookConfig.Webhooks {
-					if i < len(webhookConfig.Webhooks) {
-						currentWebhook := webhookConfig.Webhooks[i]
-						if webhookChanged(updatedWebhook, currentWebhook) {
-							webhookConfig.Webhooks = updatedWebhookConfig.Webhooks
-							updated = true
-							break
-						}
+			// Compare each webhook
+			for i, updatedWebhook := range updatedWebhookConfig.Webhooks {
+				if i < len(webhookConfig.Webhooks) {
+					currentWebhook := webhookConfig.Webhooks[i]
+					if webhookChanged(updatedWebhook, currentWebhook) {
+						webhookConfig.Webhooks = updatedWebhookConfig.Webhooks
+						updated = true
+						break
 					}
 				}
 			}
+		}
 
-			// Only set controller reference if we actually updated something
-			if updated {
-				return controllerutil.SetControllerReference(overcommitClass, webhookConfig, r.Scheme)
-			}
+		// Only set controller reference if we actually updated something
+		if updated {
+			return controllerutil.SetControllerReference(overcommitClass, webhookConfig, r.Scheme)
 		}
 		return nil
 	})

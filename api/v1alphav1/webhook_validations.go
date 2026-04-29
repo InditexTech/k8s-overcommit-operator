@@ -17,10 +17,10 @@ import (
 
 func validateSpecOvercommit(class OvercommitClass) error {
 	if class.Spec.CpuOvercommit <= 0 || class.Spec.CpuOvercommit > 1 {
-		return errors.New("Error: cpuOvercommit must be greater than 0 and equal or lower than 1, failed creating " + class.ObjectMeta.Name + " class ")
+		return errors.New("Error: cpuOvercommit must be greater than 0 and equal or lower than 1, failed creating " + class.Name + " class ")
 	}
 	if class.Spec.MemoryOvercommit <= 0 || class.Spec.MemoryOvercommit > 1 {
-		return errors.New("Error: memoryOvercommit must be greater than 0 and equal or lower than 1, failed creating " + class.ObjectMeta.Name + " class ")
+		return errors.New("Error: memoryOvercommit must be greater than 0 and equal or lower than 1, failed creating " + class.Name + " class ")
 	}
 	return nil
 }
@@ -32,12 +32,12 @@ func checkDecimals(class OvercommitClass) error {
 	roundedCpu := math.Round(cpu*precision) / precision
 
 	if math.Abs(cpu-roundedCpu) > 1e-9 {
-		return errors.New("Error: the CPU value must have 4 decimals max")
+		return errors.New("the CPU value must have 4 decimals max")
 	}
 
 	roundedMemory := math.Round(memory*precision) / precision
 	if math.Abs(memory-roundedMemory) > 1e-9 {
-		return errors.New("Error: the memory value must have 4 decimals max")
+		return errors.New("the memory value must have 4 decimals max")
 	}
 	return nil
 }
@@ -63,7 +63,7 @@ func isClassDefault(class OvercommitClass, client client.Client) error {
 	}
 
 	if existsDefault {
-		return fmt.Errorf("error: only one OvercommitClass can be default, failed creating %s class", class.ObjectMeta.Name)
+		return fmt.Errorf("error: only one OvercommitClass can be default, failed creating %s class", class.Name)
 	}
 
 	return nil
