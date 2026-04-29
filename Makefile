@@ -286,8 +286,8 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	cp -r chart/* deploy/chart/$(VERSION)/
 
 .PHONY: bundle-build
-bundle-build: ## Build the bundle image (multi-arch).
-	$(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+bundle-build: ## Build the bundle image.
+	$(CONTAINER_TOOL) build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-push
 bundle-push: ## Push the bundle image.
