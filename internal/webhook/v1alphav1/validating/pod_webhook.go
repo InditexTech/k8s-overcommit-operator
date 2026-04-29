@@ -8,17 +8,14 @@ package v1alphav1
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/InditexTech/k8s-overcommit-operator/internal/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -29,8 +26,8 @@ var podlog = logf.Log.WithName("pod-resource")
 // SetupPodWebhookWithManager registers the webhook for Pod in the manager.
 func SetupPodWebhookWithManager(mgr ctrl.Manager) error {
 	validator := &PodCustomValidator{}
-	validator.InjectClient(mgr.GetClient())
-	return ctrl.NewWebhookManagedBy(mgr).For(&corev1.Pod{}).
+	validator.Client = mgr.GetClient()
+	return ctrl.NewWebhookManagedBy(mgr, &corev1.Pod{}).
 		WithValidator(validator).
 		Complete()
 }
@@ -46,24 +43,16 @@ type PodCustomValidator struct {
 	Client client.Client
 }
 
-func (v *PodCustomValidator) InjectClient(c client.Client) {
-	v.Client = c
-}
-
-var _ webhook.CustomValidator = &PodCustomValidator{}
+var _ admission.Validator[*corev1.Pod] = &PodCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Pod.
-func (v *PodCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *PodCustomValidator) ValidateCreate(ctx context.Context, pod *corev1.Pod) (admission.Warnings, error) {
 
 	label, err := utils.GetOvercommitLabel(ctx, v.Client)
 	if err != nil {
 		return nil, err
 	}
 
-	pod, ok := obj.(*corev1.Pod)
-	if !ok {
-		return nil, fmt.Errorf("expected a Pod object but got %T", obj)
-	}
 	podlog.Info("Validation for Pod upon creation", "name", pod.GetName())
 
 	value, exists := pod.Labels[label]
@@ -95,11 +84,7 @@ func (v *PodCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Obj
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Pod.
-func (v *PodCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	pod, ok := newObj.(*corev1.Pod)
-	if !ok {
-		return nil, fmt.Errorf("expected a Pod object for the newObj but got %T", newObj)
-	}
+func (v *PodCustomValidator) ValidateUpdate(ctx context.Context, oldPod *corev1.Pod, pod *corev1.Pod) (admission.Warnings, error) {
 	podlog.Info("Validation for Pod upon update", "name", pod.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -108,11 +93,7 @@ func (v *PodCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj 
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Pod.
-func (v *PodCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	pod, ok := obj.(*corev1.Pod)
-	if !ok {
-		return nil, fmt.Errorf("expected a Pod object but got %T", obj)
-	}
+func (v *PodCustomValidator) ValidateDelete(ctx context.Context, pod *corev1.Pod) (admission.Warnings, error) {
 	podlog.Info("Validation for Pod upon deletion", "name", pod.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

@@ -72,14 +72,9 @@ var _ = Describe("PodCustomDefaulter Webhook", func() {
 			Expect(actualRequests[corev1.ResourceMemory].Equal(expectedRequests[corev1.ResourceMemory])).To(BeTrue())
 		})
 
-		It("Should fail if the object is not a Pod", func() {
-			// Create a non-Pod object
-			nonPod := &corev1.Service{}
-
-			// Call the Default method
-			err := defaulter.Default(context.TODO(), nonPod)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("expected a Pod object but got"))
+		It("Should handle non-Pod gracefully", func() {
+			// With typed generics, passing a non-Pod is now a compile-time error.
+			// This test is no longer applicable.
 		})
 	})
 })
