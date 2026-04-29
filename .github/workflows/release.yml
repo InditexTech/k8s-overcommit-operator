@@ -92,12 +92,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏗️ Build and push Operator image
+      - name: 🖥️ Set up QEMU (multi-arch emulation)
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3
+
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3
+
+      - name: 🏗️ Build and push Operator image (multi-arch)
         run: |
-          make docker-build docker-push
+          make docker-buildx PLATFORMS=linux/amd64,linux/arm64
       - name: 🏗️ Build and push Operator bundle
         run: |
-          make bundle
           make bundle-build bundle-push
       - name: 🏗️ Build and push Operator catalog
         run: |

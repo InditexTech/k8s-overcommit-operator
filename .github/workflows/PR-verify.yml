@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  NODE_VERSION: "20"
+
 jobs:
   repo-linter:
     name: Repo Linter
