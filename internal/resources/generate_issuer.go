@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package resources provides functions to generate Kubernetes resources for the operator.
 package resources
 
 import (

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Package v1 contains API Schema definitions for the overcommit v1 API group
+// Package v1alphav1 contains API Schema definitions for the overcommit v1alphav1 API group
 // +kubebuilder:object:generate=true
 // +groupName=overcommit.inditex.dev
 package v1alphav1

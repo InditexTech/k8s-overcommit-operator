@@ -27,7 +27,7 @@ func GenerateCertificateValidatingPods(issuer certmanagerv1.Issuer, svc corev1.S
 		},
 		Spec: certmanagerv1.CertificateSpec{
 			SecretName: "pod-validating-webhook",
-			IssuerRef: certmanagermeta.ObjectReference{
+			IssuerRef: certmanagermeta.IssuerReference{
 				Name: issuer.Name,
 			},
 			Duration: &metav1.Duration{
@@ -349,7 +349,7 @@ func GenerateCertificateValidatingOvercommitClass(issuer certmanagerv1.Issuer, s
 		},
 		Spec: certmanagerv1.CertificateSpec{
 			SecretName: "oc-validating-webhook",
-			IssuerRef: certmanagermeta.ObjectReference{
+			IssuerRef: certmanagermeta.IssuerReference{
 				Name: issuer.Name,
 			},
 			Duration: &metav1.Duration{

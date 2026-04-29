@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package metrics defines Prometheus metrics for the operator.
 package metrics
 
 import (
