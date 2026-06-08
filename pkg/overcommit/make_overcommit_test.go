@@ -95,6 +95,7 @@ var _ = Describe("Overcommit", func() {
 			Overcommit(context.Background(), pod, recorder, k8sClient)
 
 			Expect(pod.Spec.Containers[0].Resources.Requests).To(Equal(expectedRequests))
+			Expect(pod.Annotations[AnnotationOvercommitApplied]).To(Equal("test-class"))
 		})
 	})
 
@@ -112,6 +113,7 @@ var _ = Describe("Overcommit", func() {
 			Overcommit(context.Background(), pod, recorder, k8sClient)
 
 			Expect(pod.Spec.Containers[0].Resources.Requests).To(Equal(expectedRequests))
+			Expect(pod.Annotations[AnnotationOvercommitApplied]).To(Equal("test-class"))
 		})
 
 	})

@@ -6,19 +6,19 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: busybox-test3
-  namespace: test-3
+  name: issue-47-pod
+  namespace: issue-47-namespace
   annotations:
-    overcommit.inditex.dev/applied: "test3"
+    overcommit.inditex.dev/applied: "issue-47-first"
     overcommit.inditex.dev/cpu: "0.2500"
-    overcommit.inditex.dev/memory: "0.2500"
+    overcommit.inditex.dev/memory: "0.7500"
 spec:
   containers:
-    - name: busybox3
+    - name: busybox
       resources:
         requests:
-          memory: "512Mi"
-          cpu: "125m"
+          memory: "768Mi"
+          cpu: "250m"
         limits:
-          memory: "2Gi"
-          cpu: "500m"
+          memory: "1Gi"
+          cpu: "1"

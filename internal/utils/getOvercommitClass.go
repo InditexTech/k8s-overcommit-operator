@@ -46,6 +46,15 @@ func GetOvercommitClassSpec(ctx context.Context, name string, k8sClient client.C
 }
 
 func GetDefaultSpec(ctx context.Context, k8sClient client.Client) (*overcommit.OvercommitClassSpec, error) {
+	defaultClass, err := GetDefaultClass(ctx, k8sClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return &defaultClass.Spec, nil
+}
+
+func GetDefaultClass(ctx context.Context, k8sClient client.Client) (*overcommit.OvercommitClass, error) {
 	if k8sClient == nil {
 		return nil, errors.New("client parameter cannot be nil")
 	}
@@ -57,10 +66,10 @@ func GetDefaultSpec(ctx context.Context, k8sClient client.Client) (*overcommit.O
 	}
 
 	// Find the default OvercommitClass
-	for _, overcommitClass := range overcommitClasses.Items {
-		if overcommitClass.Spec.IsDefault {
-			podlog.Info("Default OvercommitClass found", "name", overcommitClass.Name)
-			return &overcommitClass.Spec, nil
+	for i := range overcommitClasses.Items {
+		if overcommitClasses.Items[i].Spec.IsDefault {
+			podlog.Info("Default OvercommitClass found", "name", overcommitClasses.Items[i].Name)
+			return &overcommitClasses.Items[i], nil
 		}
 	}
 

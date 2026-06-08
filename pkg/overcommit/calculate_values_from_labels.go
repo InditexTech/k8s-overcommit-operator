@@ -9,22 +9,30 @@ package overcommit
 import (
 	"context"
 
-	"github.com/InditexTech/k8s-overcommit-operator/internal/metrics"
 	"github.com/InditexTech/k8s-overcommit-operator/internal/utils"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type overcommitResolution struct {
+	className   string
+	cpuValue    float64
+	memoryValue float64
+	ownerName   string
+	ownerKind   string
+	resolved    bool
+}
+
 // getNamespaceOvercommit gets the overcommit values from the namespace label or falls back to the default class.
-// Returns (1.0, 1.0) as safe no-op values when any error occurs to avoid mutating pods incorrectly.
-func getNamespaceOvercommit(ctx context.Context, pod *corev1.Pod, k8sClient client.Client, label, ownerName, ownerKind string) (float64, float64) {
+// Returns safe no-op values when any error occurs to avoid mutating pods incorrectly.
+func getNamespaceOvercommit(ctx context.Context, pod *corev1.Pod, k8sClient client.Client, label, ownerName, ownerKind string) overcommitResolution {
 	// Get the namespace of the pod
 	namespaceName := pod.Namespace
 	var ns corev1.Namespace
 	err := k8sClient.Get(ctx, client.ObjectKey{Name: namespaceName}, &ns)
 	if err != nil {
 		podlog.Error(err, "Error getting the namespace", "namespace", namespaceName)
-		return 1.0, 1.0
+		return overcommitResolution{cpuValue: 1.0, memoryValue: 1.0, ownerName: ownerName, ownerKind: ownerKind}
 	}
 
 	// Check if the overcommit class label is in the namespace
@@ -33,23 +41,35 @@ func getNamespaceOvercommit(ctx context.Context, pod *corev1.Pod, k8sClient clie
 		overcommitClass, err := utils.GetOvercommitClassSpec(ctx, val, k8sClient)
 		if err != nil {
 			podlog.Error(err, "Error getting the overcommit class", "overcommitClassLabel", val)
-			return 1.0, 1.0
+			return overcommitResolution{cpuValue: 1.0, memoryValue: 1.0, ownerName: ownerName, ownerKind: ownerKind}
 		}
-		metrics.K8sOvercommitPodMutated.WithLabelValues(val, ownerKind, ownerName, pod.Namespace).Inc()
-		return overcommitClass.CpuOvercommit, overcommitClass.MemoryOvercommit
+		return overcommitResolution{
+			className:   val,
+			cpuValue:    overcommitClass.CpuOvercommit,
+			memoryValue: overcommitClass.MemoryOvercommit,
+			ownerName:   ownerName,
+			ownerKind:   ownerKind,
+			resolved:    true,
+		}
 	}
 
 	podlog.Info("Overcommit class not found in the namespace, using the default", "namespace", ns.Name)
-	defaultClass, err := utils.GetDefaultSpec(ctx, k8sClient)
+	defaultClass, err := utils.GetDefaultClass(ctx, k8sClient)
 	if err != nil {
 		podlog.Error(err, "Error getting the default overcommit class")
-		return 1.0, 1.0
+		return overcommitResolution{cpuValue: 1.0, memoryValue: 1.0, ownerName: ownerName, ownerKind: ownerKind}
 	}
-	metrics.K8sOvercommitPodMutated.WithLabelValues("default", ownerKind, ownerName, pod.Namespace).Inc()
-	return defaultClass.CpuOvercommit, defaultClass.MemoryOvercommit
+	return overcommitResolution{
+		className:   defaultClass.Name,
+		cpuValue:    defaultClass.Spec.CpuOvercommit,
+		memoryValue: defaultClass.Spec.MemoryOvercommit,
+		ownerName:   ownerName,
+		ownerKind:   ownerKind,
+		resolved:    true,
+	}
 }
 
-func checkOvercommitType(ctx context.Context, pod corev1.Pod, client client.Client) (float64, float64) {
+func checkOvercommitType(ctx context.Context, pod corev1.Pod, client client.Client) overcommitResolution {
 	ownerName, ownerKind, err := utils.GetPodOwner(ctx, client, &pod)
 	if err != nil {
 		podlog.Error(err, "Error getting the pod owner")
@@ -59,7 +79,7 @@ func checkOvercommitType(ctx context.Context, pod corev1.Pod, client client.Clie
 	label, err := utils.GetOvercommitLabel(ctx, client)
 	if err != nil {
 		podlog.Error(err, "Error getting the overcommit label")
-		return 1.0, 1.0
+		return overcommitResolution{cpuValue: 1.0, memoryValue: 1.0, ownerName: ownerName, ownerKind: ownerKind}
 	}
 	//  Check if the pod has the overcommit class label
 	value, exists := pod.Labels[label]
@@ -76,8 +96,14 @@ func checkOvercommitType(ctx context.Context, pod corev1.Pod, client client.Clie
 			// Overcommit class not found or some error, fall back to namespace/default
 			return getNamespaceOvercommit(ctx, &pod, client, label, ownerName, ownerKind)
 		}
-		metrics.K8sOvercommitPodMutated.WithLabelValues(value, ownerKind, ownerName, pod.Namespace).Inc()
-		return overcommitClass.CpuOvercommit, overcommitClass.MemoryOvercommit
+		return overcommitResolution{
+			className:   value,
+			cpuValue:    overcommitClass.CpuOvercommit,
+			memoryValue: overcommitClass.MemoryOvercommit,
+			ownerName:   ownerName,
+			ownerKind:   ownerKind,
+			resolved:    true,
+		}
 	}
 
 	// Overcommit class not found, checking the namespace

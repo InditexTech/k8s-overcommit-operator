@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2025 2025 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
+# SPDX-FileContributor: enriqueavi@inditex.com
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: overcommit.inditex.dev/v1alphav1
+kind: OvercommitClass
+metadata:
+  name: issue-47-first
+spec:
+  cpuOvercommit: 0.25
+  memoryOvercommit: 0.75
+  isDefault: false
+  excludedNamespaces: ".*(^(openshift|k8s-overcommit|kube).*).*"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: issue-47-namespace
+  labels:
+    inditex.com/overcommit-class: issue-47-first
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: issue-47-pod
+  namespace: issue-47-namespace
+spec:
+  containers:
+    - name: busybox
+      image: busybox
+      command: ["sh", "-c", "sleep 3600"]
+      resources:
+        requests:
+          memory: "100Mi"
+          cpu: "100m"
+        limits:
+          memory: "1Gi"
+          cpu: "1"
