@@ -52,7 +52,12 @@ func mutateContainers(containers []corev1.Container, cpuValue float64, memoryVal
 }
 
 func Overcommit(ctx context.Context, pod *corev1.Pod, recorder record.EventRecorder, client client.Client) {
-	className := os.Getenv("OVERCOMMIT_CLASS_NAME")
+	webhookClassName := os.Getenv("OVERCOMMIT_CLASS_NAME")
+	resolution := checkOvercommitType(ctx, *pod, client)
+	className := resolution.className
+	if className == "" {
+		className = webhookClassName
+	}
 
 	metrics.K8sOvercommitOperatorPodsRequestedTotal.WithLabelValues(className).Inc()
 
@@ -64,19 +69,20 @@ func Overcommit(ctx context.Context, pod *corev1.Pod, recorder record.EventRecor
 		}
 	}
 
-	cpuValue, memoryValue := checkOvercommitType(ctx, *pod, client)
-
-	mutateContainers(pod.Spec.Containers, cpuValue, memoryValue)
+	mutateContainers(pod.Spec.Containers, resolution.cpuValue, resolution.memoryValue)
 
 	// Also mutate init containers on regular CREATE/UPDATE
 	if len(pod.Spec.InitContainers) > 0 {
-		mutateContainers(pod.Spec.InitContainers, cpuValue, memoryValue)
+		mutateContainers(pod.Spec.InitContainers, resolution.cpuValue, resolution.memoryValue)
 	}
 
 	// Mark the pod as mutated to prevent double-application on reinvocation
-	setOvercommitAnnotation(pod, className, cpuValue, memoryValue)
+	setOvercommitAnnotation(pod, className, resolution.cpuValue, resolution.memoryValue)
 
 	metrics.K8sOvercommitOperatorMutatedPodsTotal.WithLabelValues(className).Inc()
+	if resolution.resolved {
+		metrics.K8sOvercommitPodMutated.WithLabelValues(className, resolution.ownerKind, resolution.ownerName, pod.Namespace).Inc()
+	}
 
 	recorder.Eventf(
 		pod,
@@ -85,25 +91,31 @@ func Overcommit(ctx context.Context, pod *corev1.Pod, recorder record.EventRecor
 		"Applied overcommit to Pod '%s': OvercommitClass = %s, CPU Overcommit = %.2f, Memory Overcommit = %.2f",
 		pod.Name,
 		className,
-		cpuValue,
-		memoryValue,
+		resolution.cpuValue,
+		resolution.memoryValue,
 	)
 }
 
 func OvercommitOnResize(ctx context.Context, pod *corev1.Pod, recorder record.EventRecorder, client client.Client) {
-	className := os.Getenv("OVERCOMMIT_CLASS_NAME")
+	webhookClassName := os.Getenv("OVERCOMMIT_CLASS_NAME")
+	resolution := checkOvercommitType(ctx, *pod, client)
+	className := resolution.className
+	if className == "" {
+		className = webhookClassName
+	}
 
 	metrics.K8sOvercommitOperatorPodsRequestedTotal.WithLabelValues(className).Inc()
 
-	cpuValue, memoryValue := checkOvercommitType(ctx, *pod, client)
-
 	// On resize: only mutate regular containers, skip init containers.
-	mutateContainers(pod.Spec.Containers, cpuValue, memoryValue)
+	mutateContainers(pod.Spec.Containers, resolution.cpuValue, resolution.memoryValue)
 
 	// Update annotation with new values after resize
-	setOvercommitAnnotation(pod, className, cpuValue, memoryValue)
+	setOvercommitAnnotation(pod, className, resolution.cpuValue, resolution.memoryValue)
 
 	metrics.K8sOvercommitOperatorMutatedPodsTotal.WithLabelValues(className).Inc()
+	if resolution.resolved {
+		metrics.K8sOvercommitPodMutated.WithLabelValues(className, resolution.ownerKind, resolution.ownerName, pod.Namespace).Inc()
+	}
 
 	recorder.Eventf(
 		pod,
@@ -112,8 +124,8 @@ func OvercommitOnResize(ctx context.Context, pod *corev1.Pod, recorder record.Ev
 		"Applied overcommit on resize to Pod '%s': OvercommitClass = %s, CPU Overcommit = %.2f, Memory Overcommit = %.2f",
 		pod.Name,
 		className,
-		cpuValue,
-		memoryValue,
+		resolution.cpuValue,
+		resolution.memoryValue,
 	)
 }
 

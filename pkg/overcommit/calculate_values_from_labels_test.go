@@ -16,27 +16,29 @@ var _ = Describe("Overcommit Functions", func() {
 
 	Describe("getNamespaceOvercommit", func() {
 		It("should return the correct overcommit values from the namespace", func() {
-			cpuOvercommit, memoryOvercommit := getNamespaceOvercommit(context.TODO(), testPod, k8sClient, "inditex.com/overcommit-class", "ownerName", "ownerKind")
-			Expect(cpuOvercommit).To(Equal(0.5))
-			Expect(memoryOvercommit).To(Equal(0.5))
+			resolution := getNamespaceOvercommit(context.TODO(), testPod, k8sClient, "inditex.com/overcommit-class", "ownerName", "ownerKind")
+			Expect(resolution.className).To(Equal("test-class"))
+			Expect(resolution.cpuValue).To(Equal(0.5))
+			Expect(resolution.memoryValue).To(Equal(0.5))
 		})
 	})
 
 	Describe("checkOvercommitType", func() {
 		It("should return the correct overcommit values from the pod", func() {
-			cpuOvercommit, memoryOvercommit := checkOvercommitType(context.TODO(), *testPod, k8sClient)
-			Expect(cpuOvercommit).To(Equal(0.5))
-			Expect(memoryOvercommit).To(Equal(0.5))
+			resolution := checkOvercommitType(context.TODO(), *testPod, k8sClient)
+			Expect(resolution.className).To(Equal("test-class"))
+			Expect(resolution.cpuValue).To(Equal(0.5))
+			Expect(resolution.memoryValue).To(Equal(0.5))
 		})
 
 		It("should fallback to namespace overcommit values if pod label is missing", func() {
-			delete(testPod.Labels, "LABEL_OVERCOMMIT_CLASS")
-			err := k8sClient.Update(context.TODO(), testPod)
-			Expect(err).NotTo(HaveOccurred())
+			pod := testPod.DeepCopy()
+			delete(pod.Labels, "inditex.com/overcommit-class")
 
-			cpuOvercommit, memoryOvercommit := checkOvercommitType(context.TODO(), *testPod, k8sClient)
-			Expect(cpuOvercommit).To(Equal(0.5))
-			Expect(memoryOvercommit).To(Equal(0.5))
+			resolution := checkOvercommitType(context.TODO(), *pod, k8sClient)
+			Expect(resolution.className).To(Equal("test-class"))
+			Expect(resolution.cpuValue).To(Equal(0.5))
+			Expect(resolution.memoryValue).To(Equal(0.5))
 		})
 	})
 })
