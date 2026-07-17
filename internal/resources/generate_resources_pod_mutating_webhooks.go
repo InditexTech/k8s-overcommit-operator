@@ -7,6 +7,7 @@ package resources
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	overcommit "github.com/InditexTech/k8s-overcommit-operator/api/v1alphav1"
@@ -179,7 +180,7 @@ func getMatchCondition(excludedNamespaces string) []admissionv1.MatchCondition {
 	matchConditions := []admissionv1.MatchCondition{}
 	matchConditions = append(matchConditions, admissionv1.MatchCondition{
 		Name:       "exclude-namespaces",
-		Expression: "!object.metadata.namespace.matches('" + excludedNamespaces + "')",
+		Expression: "!object.metadata.namespace.matches('" + strings.ReplaceAll(excludedNamespaces, "'", "\\'") + "')",
 	})
 
 	return matchConditions
