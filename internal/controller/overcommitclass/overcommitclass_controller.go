@@ -378,9 +378,9 @@ func (r *OvercommitClassReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	if getTotalClasses(ctx, r.Client) != nil {
-		logger.Error(err, "Failed to update metrics")
-		return ctrl.Result{}, err
+	if metricsErr := getTotalClasses(ctx, r.Client); metricsErr != nil {
+		logger.Error(metricsErr, "Failed to update metrics")
+		return ctrl.Result{}, metricsErr
 	}
 
 	// Update the status of the resources
