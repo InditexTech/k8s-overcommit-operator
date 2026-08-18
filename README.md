@@ -73,7 +73,7 @@ deployment:
   image:
     registry: ghcr.io
     image: inditextech/k8s-overcommit-operator
-    tag: 1.3.1
+    tag: 1.3.2
 ```
 
 #### 3️⃣ Install with Helm
