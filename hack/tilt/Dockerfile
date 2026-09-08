@@ -5,7 +5,7 @@
 
 # hack/tilt/Dockerfile
 
-FROM alpine:3.19.1
+FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY hack/tilt/bin/manager manager
 
