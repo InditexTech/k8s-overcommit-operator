@@ -32,6 +32,7 @@ path= [
     ".github/**",
     ".golangci.yml",
     ".*ignore",
+    ".sync-exclude",
     "chart/.helmignore",
     "chart/templates/_*.tpl",
     "hack/**",
