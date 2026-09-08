@@ -1,0 +1,115 @@
+# SPDX-FileCopyrightText: 2026 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
+# SPDX-License-Identifier: Apache-2.0
+
+name: Push Verification
+permissions:
+  contents: read
+
+on:
+  push:
+
+concurrency:
+  group: push-verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  workflow-quality:
+    if: >-
+      github.ref_type == 'branch' &&
+      github.ref_name == github.event.repository.default_branch
+    name: Workflow and Template Quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      checks: write # Lets reviewdog publish actionlint check results.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lint GitHub Actions workflows
+        uses: reviewdog/action-actionlint@dbe5299849118fd6f099ba563d263d770955a64a # v1.73.2
+        with:
+          reporter: github-check
+          fail_level: error
+
+  scorecard-analysis:
+    if: >-
+      github.ref_type == 'branch' &&
+      github.event.repository.visibility == 'public' &&
+      github.ref_name == github.event.repository.default_branch
+    name: Scorecard analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # Lets Scorecard prove the published result's provenance.
+      security-events: write # Uploads the generated Scorecard SARIF to Code Scanning.
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: "Run analysis"
+        uses: ossf/scorecard-action@f49aabe0b5af0936a0987cfb85d86b75731b0186 # v2.4.1
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # Scorecard team runs a weekly scan of public GitHub repos,
+          # see https://github.com/ossf/scorecard#public-data.
+          # Setting `publish_results: true` helps us scale by leveraging your workflow to
+          # extract the results instead of relying on our own infrastructure to run scans.
+          # And it's free for you!
+          publish_results: true
+
+      # Upload the results as artifacts (optional). Commenting out will disable
+      # uploads of run results in SARIF format to the repository Actions tab.
+      # https://docs.github.com/en/actions/advanced-guides/storing-workflow-data-as-artifacts
+      - name: "Upload artifact"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: SARIF file
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload SARIF to Code Scanning
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: results.sarif
+          category: scorecard
+
+  repo-linter:
+    if: >-
+      github.ref_type == 'branch' &&
+      github.ref_name == github.event.repository.default_branch
+    name: Repo Linter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 'Run Repolinter'
+        uses: newrelic/repolinter-action@3f4448f855c351e9695b24524a4111c7847b84cb # v1.7.0
+
+  reuse-compliance:
+    if: >-
+      github.ref_type == 'branch' &&
+      github.ref_name == github.event.repository.default_branch
+    name: REUSE Compliance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: REUSE Compliance Check
+        uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0
