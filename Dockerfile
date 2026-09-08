@@ -1,9 +1,10 @@
 # Build the manager binary
-FROM golang:1.26.6 AS builder
+FROM golang:1.26.8-alpine3.23 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
 WORKDIR /workspace
+RUN apk upgrade --no-cache
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
