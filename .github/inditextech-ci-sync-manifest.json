@@ -1,0 +1,48 @@
+{
+  "configuration": {
+    "development_flow": "trunk-based",
+    "outputs": [],
+    "parameters": {
+      "artifacts": "none",
+      "sonar": true,
+      "verify_command": "make build test lint",
+      "working_directory": "."
+    }
+  },
+  "creation_year": 2026,
+  "integrity": {
+    "algorithm": "hmac-sha256",
+    "signature": "b9e6b75852c23cbbed7265826d4808864092fa5f3c232af9e14f617ae71bf96e"
+  },
+  "managed_by": "InditexTech CI governance",
+  "managed_paths": {
+    ".github/ISSUE_TEMPLATE/1-bug.yml": "cd4dad3f32fe707e06324790a2fe2c25829c55566de2b459d744e785b36e1205",
+    ".github/ISSUE_TEMPLATE/2-feature.yml": "ebb92730d6c01641d055f97ac094cbe07f88fac24be9b689ddf26e47e7bda863",
+    ".github/ISSUE_TEMPLATE/3-other.yml": "5a839b39a98704036210dee498146f51bd5a6c057228685680e02004ff063a9a",
+    ".github/ISSUE_TEMPLATE/config.yml": "10e5dee4d49aa9e7792ceb4c986160c61f95da1ba00a64bf06e5f1f636cd17ec",
+    ".github/PULL_REQUEST_TEMPLATE.md": "23a0b0ac79a9020ccac9c013582a01f86e2df2ae7f914673583b9a3368313041",
+    ".github/inditextech-ci-go.json": "d854041fe302eab86b99a4ee25414027fda743af14f26db7e8883ab90f60c5fd",
+    ".github/workflows/code-gomod_go-PR_verify.yml": "7145f586962f35425afbce4cdd00c61f0447d25f1c22ea48c8131f42343f893e",
+    ".github/workflows/code-gomod_go-sonarcloud-analysis.yml": "65b682f75a2fc0d9e928bc4816d79e1ff6aa68830c47148e23db9943f3a79c10",
+    ".github/workflows/codeql.yml": "a7ff83d8f89a5e02bfd729939a51a0a512a0f2f3fa7ddf9dc688dfdf41937748",
+    ".github/workflows/pr-verify.yml": "f52295fbfe81578c0a6459d8b384be569933ac78d32fff370932a8dec6943e46",
+    ".github/workflows/push-verify.yml": "217097070d0fdef329eae1a7187806a4623d692ce467ca8f1f9a7f56dddb29ed",
+    "repolinter.json": "0efb305c47a63f03c488a34906fc2d5471c84145c2ff553f2aacf3a41b92e1a1"
+  },
+  "managed_variables": {
+    "DEVELOPMENT_FLOW": "trunk-based-development",
+    "WORKING_DIRECTORY": "."
+  },
+  "profile": "go",
+  "repository_id": 1011107741,
+  "retained_paths": {
+    "CODE_OF_CONDUCT.md": "97188ec333ef1e7e4b8811a41e714a922460bf1a07dabf8d9542dd2def6e0af2",
+    "CONTRIBUTING.md": "f9c34489e076248247476a0dc9b7ab07fba014dc2c5d82b9ef246546f6c46dab",
+    "SECURITY.md": "fcaf4cc7669737e9025dafe551a39190dbc3d43b3b5b58e803f5a2a49f39d8f9"
+  },
+  "schema_version": 2,
+  "source_digests": {
+    "base": "09dc9b8d0dcb29288bdb6adeb49cea193b4b79f8de78e55eed00c1c669b5ab5a",
+    "go": "963229e52884cccc1de8b2251ce7745a8fa5e36970553eeb513a9d1f914d4410"
+  }
+}
