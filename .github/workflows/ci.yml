@@ -9,7 +9,7 @@ jobs:
     name: E2E tests 🔃
     steps:
     - name: Checkout 🧲
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Restore go build cache ⏬
       uses: actions/cache@v4
