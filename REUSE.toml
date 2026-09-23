@@ -30,12 +30,15 @@ SPDX-FileComment = "Documentation"
 [[annotations]]
 path= [
     ".github/**",
+    ".gitattributes",
     ".golangci.yml",
     ".*ignore",
+    ".sync-exclude",
     "chart/.helmignore",
     "chart/templates/_*.tpl",
     "hack/**",
     "internal/**",
+    "NOTICE",
     "PROJECT",
     "repolinter.json",
     "Tiltfile",
