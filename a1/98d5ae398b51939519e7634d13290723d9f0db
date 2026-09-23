@@ -1,0 +1,89 @@
+.github/workflows/check-code-gen.yml
+  s_8640c1d21e7ac0::t_5e32c0147d9d6f 12,15,29,32
+.github/workflows/ci.yml
+  s_8640c1d21e7ac0::t_bbda57159dcb6d 12,15,21
+.github/workflows/release.yml
+  s_8640c1d21e7ac0::t_1d1ee67f84cadf 24,84,89,96,99
+.github/workflows/test-bundle.yml
+  s_8640c1d21e7ac0::t_09002d8f9b8aad 15,19
+Dockerfile
+  s_8640c1d21e7ac0::t_5e9edb2ac12bfd 2
+Makefile
+  s_8640c1d21e7ac0::t_df54d225ffc7d4 11
+README.md
+  s_8640c1d21e7ac0::t_cc18ddf8e0dc71 76
+bundle/manifests/k8s-overcommit.clusterserviceversion.yaml
+  s_8640c1d21e7ac0::t_87fcba5441fa63 33,36,224,316
+chart/Chart.yaml
+  s_8640c1d21e7ac0::t_2173f7581ef3b9 12
+chart/values.yaml
+  s_8640c1d21e7ac0::t_6d7daadfb54006 35
+config/manager/kustomization.yaml
+  s_8640c1d21e7ac0::t_f01e232fe13d2c 8
+deploy/catalog_source.yaml
+  s_8640c1d21e7ac0::t_b9e2e6bcdbba6e 8
+deploy/chart/1.3.3/Chart.yaml
+  s_8640c1d21e7ac0::t_f9e126506a56b0 1-29
+deploy/chart/1.3.3/crds/overcommit.yaml
+  s_8640c1d21e7ac0::t_6af24a764bfca8 1-186
+deploy/chart/1.3.3/crds/overcommitClass.yaml
+  s_8640c1d21e7ac0::t_6c0d1b18fddc7b 1-209
+deploy/chart/1.3.3/templates/01-namespace.yaml
+  s_8640c1d21e7ac0::t_c489636183133b 1-12
+deploy/chart/1.3.3/templates/02-overcommit.yaml
+  s_8640c1d21e7ac0::t_95db988a40fd0f 1-25
+deploy/chart/1.3.3/templates/02-rbac.yaml
+  s_8640c1d21e7ac0::t_af99f6df918e5d 1-128
+deploy/chart/1.3.3/templates/02-sa.yaml
+  s_8640c1d21e7ac0::t_97e00058e8d8da 1-11
+deploy/chart/1.3.3/templates/03-deployment.yaml
+  s_8640c1d21e7ac0::t_6ec7fcc7712be3 1-70
+deploy/chart/1.3.3/templates/04-overcommitClass.yaml
+  s_8640c1d21e7ac0::t_e71d6c35f65bc4 1-51
+deploy/chart/1.3.3/templates/_checks.tpl
+  s_8640c1d21e7ac0::t_ac1c00552e5ca4 1-14
+deploy/chart/1.3.3/templates/_helpers.tpl
+  s_8640c1d21e7ac0::t_7ae84a5dbe2b7e 1-3
+deploy/chart/1.3.3/values.yaml
+  s_8640c1d21e7ac0::t_d71c4cd588b908 1-57
+deploy/olm/1.3.3/k8s-overcommit-k8s-overcommit-view_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
+  s_8640c1d21e7ac0::t_8f37165190550b 1-13
+deploy/olm/1.3.3/k8s-overcommit-manager-cluster-reader_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
+  s_8640c1d21e7ac0::t_93141bfcd36327 1-13
+deploy/olm/1.3.3/k8s-overcommit-metrics-reader_rbac.authorization.k8s.io_v1_clusterrole.yaml
+  s_8640c1d21e7ac0::t_2073f8332f0475 1-10
+deploy/olm/1.3.3/k8s-overcommit-overcommit-editor-role_rbac.authorization.k8s.io_v1_clusterrole.yaml
+  s_8640c1d21e7ac0::t_0157acb52f32b1 1-27
+deploy/olm/1.3.3/k8s-overcommit-overcommit-viewer-role_rbac.authorization.k8s.io_v1_clusterrole.yaml
+  s_8640c1d21e7ac0::t_d4c2e385020470 1-23
+deploy/olm/1.3.3/k8s-overcommit-overcommitclass-editor-role_rbac.authorization.k8s.io_v1_clusterrole.yaml
+  s_8640c1d21e7ac0::t_37a5590a1a84f0 1-27
+deploy/olm/1.3.3/k8s-overcommit-overcommitclass-viewer-role_rbac.authorization.k8s.io_v1_clusterrole.yaml
+  s_8640c1d21e7ac0::t_2048f63553acc2 1-23
+deploy/olm/1.3.3/k8s-overcommit.clusterserviceversion.yaml
+  s_8640c1d21e7ac0::t_ab906b3d014535 1-316
+deploy/olm/1.3.3/overcommit.inditex.dev_overcommitclasses.yaml
+  s_8640c1d21e7ac0::t_4394e0459af6dc 1-211
+deploy/olm/1.3.3/overcommit.inditex.dev_overcommits.yaml
+  s_8640c1d21e7ac0::t_d63ed177d0c850 1-188
+go.mod
+  s_8640c1d21e7ac0::t_67a1473bab4719 6-14,28,31,34-47,52,54,63-64,69-76,80,82-83,85-88,90,92-95,98-100,102-106,109
+go.sum
+  s_8640c1d21e7ac0::t_b8d22c442bf5d9 13-14,28-29,41-42,47-80,96-97,100-101,108-109,128-131,137-138,141-144,154-155,157-158,171-188,198-199,202-205,208-215,218-219,224-231,237-248,251-262,267-268
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a198d5ae398b51939519e7634d13290723d9f0db",
+  "prompts": {},
+  "sessions": {
+    "s_8640c1d21e7ac0": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f32c44e98ffefcMPLX2D7n2n45",
+        "model": "zai-org/GLM-5.3-Flash"
+      },
+      "human_author": "Ivan Alvarez Sabin <ivanasabi@ext.inditex.com>"
+    }
+  }
+}
