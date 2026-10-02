@@ -32,11 +32,13 @@ jobs:
       - name: 📝 Load Operator version
         id: version
         run: |
-          echo "version=$(make print-VERSION | cut -d'=' -f2)" >> $GITHUB_OUTPUT
-          echo "values_version=$(yq '.deployment.image.tag' chart/values.yaml)" >> $GITHUB_OUTPUT
-          echo "chart_version=$(yq '.appVersion' chart/Chart.yaml)" >> $GITHUB_OUTPUT
-          echo "catalog_version=$(yq '.spec.image' deploy/catalog_source.yaml | cut -d':' -f2)" >> $GITHUB_OUTPUT
-          echo $GITHUB_OUTPUT
+          {
+            echo "version=$(make print-VERSION | cut -d'=' -f2)"
+            echo "values_version=$(yq '.deployment.image.tag' chart/values.yaml)"
+            echo "chart_version=$(yq '.appVersion' chart/Chart.yaml)"
+            echo "catalog_version=$(yq '.spec.image' deploy/catalog_source.yaml | cut -d':' -f2)"
+          } >> "$GITHUB_OUTPUT"
+          echo "$GITHUB_OUTPUT"
 
   check:
     name: 🔎 Check versions
