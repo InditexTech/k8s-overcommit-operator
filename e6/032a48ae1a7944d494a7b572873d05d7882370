@@ -1,0 +1,19 @@
+.github/workflows/release.yml
+  s_ecbe5713313ba8::t_097d86546f6c82 35-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e6032a48ae1a7944d494a7b572873d05d7882370",
+  "prompts": {},
+  "sessions": {
+    "s_ecbe5713313ba8": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "s_ecbe5713313ba8",
+        "model": "unknown"
+      },
+      "human_author": "Ivan Alvarez Sabin <ivanasabi@ext.inditex.com>"
+    }
+  }
+}
