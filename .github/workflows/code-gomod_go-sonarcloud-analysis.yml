@@ -57,8 +57,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Advisory + graceful-skip: opt-in via SONARCLOUD_ENABLED, but a repo whose
-          # SONAR_TOKEN is not provisioned simply skips analysis instead of failing.
           if [[ -z "${SONAR_TOKEN:-}" ]]; then
             echo "::notice title=SonarCloud skipped::SONAR_TOKEN is not configured; skipping advisory analysis."
             echo "enabled=false" >> "$GITHUB_OUTPUT"
@@ -82,18 +80,13 @@ jobs:
           set -euo pipefail
           resolved=""
           if [[ -f .tool-versions ]]; then
-            # Validate only real "<plugin> <version>" lines; asdf allows # comments (SPDX/REUSE) and blank lines.
             if grep -vE '^[[:space:]]*(#|$)' .tool-versions | grep -qvE '^[a-zA-Z0-9_-]+ [a-zA-Z0-9._+-]+$'; then
               echo "::error title=Invalid tool-versions::${WORKING_DIRECTORY}/.tool-versions is malformed."
               exit 1
             fi
-            # Emit only the governed golang pin so asdf ignores project extra pins (e.g. kind).
             resolved="$(grep -E '^golang ' .tool-versions || true)"
           fi
           if [[ -z "$resolved" ]]; then
-            # No committed golang pin: derive it from the module's own go directive so the
-            # governed lane follows the product's declared toolchain instead of failing or
-            # clamping it. A committed pin always wins over the derived one.
             if [[ ! -f go.mod ]]; then
               echo "::error title=Missing go toolchain::${WORKING_DIRECTORY} has no golang pin in .tool-versions and no go.mod to derive one from."
               exit 1
@@ -106,7 +99,6 @@ jobs:
               echo "::error title=Missing go toolchain::${WORKING_DIRECTORY}/go.mod declares no usable go version."
               exit 1
             fi
-            # asdf installs an exact patch release; a two-part directive (go 1.21) means .0.
             if [[ "$version" != *.*.* ]]; then
               version="${version}.0"
             fi
@@ -132,8 +124,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Advisory coverage: emit a standard Go coverage profile for Sonar. A module
-          # without tests still gets a static analysis, so coverage generation never blocks.
           go test -covermode=atomic -coverprofile=coverage.out ./... \
             || echo "::warning title=Coverage unavailable::go test produced no coverage profile; Sonar will analyze without coverage."
 

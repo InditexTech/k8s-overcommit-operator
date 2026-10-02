@@ -22,10 +22,10 @@ concurrency:
 
 env:
   WORKING_DIRECTORY: ${{ vars.WORKING_DIRECTORY }}
+  COMPONENT_DESCRIPTOR: .github/inditextech-ci-go.json
   ASDF_BRANCH_VERSION: '0.18.0'
 
 jobs:
-  # Resolves code-scanning availability at runtime so the analysis skips cleanly (green) where no Advanced Security seat is licensed, and starts automatically once a repository becomes public or gains a seat.
   scanning-availability:
     name: Resolve code scanning availability
     if: >-
@@ -48,7 +48,7 @@ jobs:
       )
     runs-on: ubuntu-24.04
     permissions:
-      contents: read # Reads repository metadata to resolve availability.
+      contents: read
     outputs:
       enabled: ${{ steps.resolve.outputs.enabled }}
     steps:
@@ -56,21 +56,19 @@ jobs:
         id: resolve
         env:
           GH_TOKEN: ${{ github.token }}
-          # Manual opt-in (CODE_SCANNING_ENABLED='true') for a seated private/internal repository whose seat status the workflow token cannot read.
           FORCE_ENABLED: ${{ vars.CODE_SCANNING_ENABLED }}
         run: |
           set -euo pipefail
-          # Visibility is always readable; the security-and-analysis block is admin-token-only, so treat a missing value as unknown.
           visibility="$(gh api "/repos/${GITHUB_REPOSITORY}" --jq '.visibility' 2>/dev/null || echo unknown)"
           seat="$(gh api "/repos/${GITHUB_REPOSITORY}" \
             --jq '.security_and_analysis.advanced_security.status // "unknown"' 2>/dev/null || echo unknown)"
           enabled=false
           if [ "${visibility}" = "public" ]; then
-            enabled=true # Code scanning is always free and available on public repositories.
+            enabled=true
           elif [ "${seat}" = "enabled" ]; then
-            enabled=true # A Code Security seat is attached, so analysis is licensed.
+            enabled=true
           elif [ "${FORCE_ENABLED:-}" = "true" ]; then
-            enabled=true # Operator opted this repository in explicitly.
+            enabled=true
           fi
           echo "Code scanning availability: visibility=${visibility} seat=${seat} enabled=${enabled}"
           echo "enabled=${enabled}" >> "${GITHUB_OUTPUT}"
@@ -81,20 +79,16 @@ jobs:
     if: needs.scanning-availability.outputs.enabled == 'true'
     runs-on: ubuntu-24.04
     permissions:
-      actions: read # Lets CodeQL inspect workflow metadata.
+      actions: read
       contents: read
-      packages: read # Lets CodeQL resolve package metadata during analysis.
-      security-events: write # Uploads CodeQL results to Code Scanning.
+      packages: read
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
         include:
           - language: actions
             build-mode: none
-          # Go has no buildless extractor: CodeQL supports build-mode 'none' only for
-          # C/C++, C#, Java, and Rust. Go is analyzed with build-mode 'autobuild', which
-          # compiles the module during init and therefore needs the governed toolchain on
-          # PATH (set up conditionally below before Initialize CodeQL).
           - language: go
             build-mode: autobuild
     steps:
@@ -102,6 +96,28 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Resolve governed working directory
+        if: matrix.language == 'go'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$COMPONENT_DESCRIPTOR" ]]; then
+            echo "::error title=Missing descriptor::${COMPONENT_DESCRIPTOR} not found."
+            exit 1
+          fi
+          workdir="${WORKING_DIRECTORY:-$(jq -r '.working_directory // empty' "$COMPONENT_DESCRIPTOR")}"
+          case "$workdir" in
+            ""|/*|..|../*|*/..|*/../*)
+              echo "::error title=Invalid working directory::WORKING_DIRECTORY must be a non-empty relative repository path." >&2
+              exit 1
+              ;;
+          esac
+          if [[ ! -d "$workdir" ]]; then
+            echo "::error title=Missing working directory::'${workdir}' is not a directory in this checkout." >&2
+            exit 1
+          fi
+          echo "WORKING_DIRECTORY=${workdir}" >> "$GITHUB_ENV"
 
       - name: Read governed tool versions
         id: tool-versions
@@ -112,18 +128,13 @@ jobs:
           set -euo pipefail
           resolved=""
           if [[ -f .tool-versions ]]; then
-            # Validate only real "<plugin> <version>" lines; asdf allows # comments (SPDX/REUSE) and blank lines.
             if grep -vE '^[[:space:]]*(#|$)' .tool-versions | grep -qvE '^[a-zA-Z0-9_-]+ [a-zA-Z0-9._+-]+$'; then
               echo "::error title=Invalid tool-versions::${WORKING_DIRECTORY}/.tool-versions is malformed."
               exit 1
             fi
-            # Emit only the governed golang pin so asdf ignores project extra pins (e.g. kind).
             resolved="$(grep -E '^golang ' .tool-versions || true)"
           fi
           if [[ -z "$resolved" ]]; then
-            # No committed golang pin: derive it from the module's own go directive so the
-            # governed lane follows the product's declared toolchain instead of failing or
-            # clamping it. A committed pin always wins over the derived one.
             if [[ ! -f go.mod ]]; then
               echo "::error title=Missing go toolchain::${WORKING_DIRECTORY} has no golang pin in .tool-versions and no go.mod to derive one from."
               exit 1
@@ -136,7 +147,6 @@ jobs:
               echo "::error title=Missing go toolchain::${WORKING_DIRECTORY}/go.mod declares no usable go version."
               exit 1
             fi
-            # asdf installs an exact patch release; a two-part directive (go 1.21) means .0.
             if [[ "$version" != *.*.* ]]; then
               version="${version}.0"
             fi
@@ -150,8 +160,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Set up asdf-managed Go
-        # autobuild compiles the module during Initialize CodeQL, so the governed Go
-        # toolchain must already be on PATH; the actions language needs no toolchain.
         if: matrix.language == 'go'
         uses: asdf-vm/actions/install@b7bcd026f18772e44fe1026d729e1611cc435d47 # v4.0.1
         with:
