@@ -61,7 +61,7 @@
       }
     },
     "readme-references-license": {
-      "level": "off",
+      "level": "error",
       "rule": {
         "type": "file-contents",
         "options": {
@@ -76,17 +76,7 @@
       "rule": {
         "type": "file-type-exclusion",
         "options": {
-          "type": ["/*.exe", "/.dll", "!node_modules/", "/*.bin"]
-        }
-      }
-    },
-    "test-directory-exists": {
-      "level": "off",
-      "rule": {
-        "type": "directory-existence",
-        "options": {
-          "globsAny": ["/test", "/specs"],
-          "nocase": true
+          "type": ["/*.exe", "/.dll", "!node_modules/"]
         }
       }
     },
@@ -96,22 +86,13 @@
         "type": "file-existence",
         "options": {
           "globsAny": [
-            ".gitlab-ci.yml",
-            ".travis.yml",
-            "appveyor.yml",
-            ".appveyor.yml",
-            "circle.yml",
-            ".circleci/config.yml",
-            "Jenkinsfile",
-            ".drone.yml",
-            ".github/workflows/",
-            "azure-pipelines.yml"
+            ".github/workflows/"
           ]
         }
       }
     },
     "code-of-conduct-file-contains-email": {
-      "level": "off",
+      "level": "error",
       "rule": {
         "type": "file-contents",
         "options": {
@@ -129,18 +110,6 @@
         }
       }
     },
-    "source-license-headers-exist": {
-      "level": "warning",
-      "rule": {
-        "type": "file-starts-with",
-        "options": {
-          "globsAll": ["./**/*.py"],
-          "lineCount": 5,
-          "patterns": ["Copyright", "License"],
-          "flags": "i"
-        }
-      }
-    },
     "github-issue-template-exists": {
       "level": "error",
       "rule": {
@@ -152,7 +121,7 @@
       }
     },
     "github-pull-request-template-exists": {
-      "level": "off",
+      "level": "error",
       "rule": {
         "type": "file-existence",
         "options": {
@@ -164,22 +133,111 @@
         }
       }
     },
+    "javascript-package-metadata-exists": {
+      "level": "error",
+      "where": ["language=javascript"],
+      "rule": {
+        "type": "file-existence",
+        "options": {
+          "globsAny": ["{,**/}package.json"]
+        }
+      }
+    },
+    "ruby-package-metadata-exists": {
+      "level": "error",
+      "where": ["language=ruby"],
+      "rule": {
+        "type": "file-existence",
+        "options": {
+          "globsAny": ["Gemfile"]
+        }
+      }
+    },
+    "java-package-metadata-exists": {
+      "level": "error",
+      "where": ["language=java"],
+      "rule": {
+        "type": "file-existence",
+        "options": {
+          "globsAny": ["{,**/}pom.xml", "{,**/}build.xml", "{,**/}build.gradle"]
+        }
+      }
+    },
+    "python-package-metadata-exists": {
+      "level": "error",
+      "where": ["language=python"],
+      "rule": {
+        "type": "file-existence",
+        "options": {
+          "globsAny": [
+            "{,**/}setup.py",
+            "{,**/}requirements.txt",
+            "{,**/}pyproject.toml"
+          ]
+        }
+      }
+    },
+    "objective-c-package-metadata-exists": {
+      "level": "error",
+      "where": ["language=objective-c"],
+      "rule": {
+        "type": "file-existence",
+        "options": {
+          "globsAny": ["Cartfile", "Podfile", ".podspec"]
+        }
+      }
+    },
+    "swift-package-metadata-exists": {
+      "level": "error",
+      "where": ["language=swift"],
+      "rule": {
+        "type": "file-existence",
+        "options": {
+          "globsAny": ["Package.swift"]
+        }
+      }
+    },
+    "erlang-package-metadata-exists": {
+      "level": "error",
+      "where": ["language=erlang"],
+      "rule": {
+        "type": "file-existence",
+        "options": {
+          "globsAny": ["rebar.config"]
+        }
+      }
+    },
+    "elixir-package-metadata-exists": {
+      "level": "error",
+      "where": ["language=elixir"],
+      "rule": {
+        "type": "file-existence",
+        "options": {
+          "globsAny": ["mix.exs"]
+        }
+      }
+    },
     "license-detectable-by-licensee": {
-      "level": "off",
+      "level": "error",
       "where": ["license="],
       "rule": {
         "type": "license-detectable-by-licensee",
         "options": {}
       }
     },
-    "best-practices-badge-present": {
-      "level": "off",
+    "notice-file-exists": {
+      "level": "error",
+      "where": ["license=Apache-2.0"],
       "rule": {
-        "type": "best-practices-badge-present"
+        "type": "file-existence",
+        "options": {
+          "globsAny": ["NOTICE*"],
+          "fail-message": "The NOTICE file is described in section 4.4 of the Apache License version 2.0. Its presence is not mandated by the license itself, but by ASF policy."
+        }
       }
     },
     "internal-file-not-exists": {
-      "level": "off",
+      "level": "error",
       "rule": {
         "type": "file-not-exists",
         "options": {

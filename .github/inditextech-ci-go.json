@@ -1,0 +1,7 @@
+{
+  "artifacts": "none",
+  "schema_version": 1,
+  "sonar": true,
+  "verify_command": "make build test lint",
+  "working_directory": "."
+}

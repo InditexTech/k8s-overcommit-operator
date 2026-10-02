@@ -1,6 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2025 2025 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
-SPDX-FileContributor: enriqueavi@inditex.com
+SPDX-FileCopyrightText: 2026 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
 
 SPDX-License-Identifier: Apache-2.0
 -->
