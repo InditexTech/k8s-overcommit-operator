@@ -19,7 +19,6 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      checks: write # Lets reviewdog publish actionlint check results.
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -31,7 +30,7 @@ jobs:
       - name: Lint GitHub Actions workflows
         uses: reviewdog/action-actionlint@2085657ab2c7f48c58edcc767fba576f63bea76b # v1.77.0
         with:
-          reporter: github-pr-check
+          reporter: github-annotations
           fail_level: error
 
   repo-linter:
@@ -66,6 +65,15 @@ jobs:
 
   conventional-commits:
     name: Conventional Commits
+    if: >-
+      !(
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.user.login == 'inditextechbot[bot]' &&
+        (
+          github.head_ref == 'automated/sync-from-main-to-develop' ||
+          startsWith(github.head_ref, 'automated/sync-release-')
+        )
+      )
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
