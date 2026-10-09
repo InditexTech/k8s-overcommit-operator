@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
 
       - name: Lint GitHub Actions workflows
-        uses: reviewdog/action-actionlint@dbe5299849118fd6f099ba563d263d770955a64a # v1.73.2
+        uses: reviewdog/action-actionlint@2085657ab2c7f48c58edcc767fba576f63bea76b # v1.77.0
         with:
           reporter: github-check
           fail_level: error
@@ -77,7 +77,7 @@ jobs:
           retention-days: 5
 
       - name: Upload SARIF to Code Scanning
-        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
           sarif_file: results.sarif
           category: scorecard
