@@ -10,14 +10,6 @@ metadata:
   name: k8s-overcommit-clusterrole
 rules:
   - apiGroups:
-    - '*'
-    resources:
-    - '*'
-    verbs:
-    - get
-    - list
-    - watch
-  - apiGroups:
     - ""
     resources:
     - events
@@ -28,16 +20,31 @@ rules:
   - apiGroups:
     - ""
     resources:
-    - services
-    - namespaces
+    - pods
     verbs:
-    - create
     - get
     - list
     - watch
+  - apiGroups:
+    - ""
+    resources:
+    - namespaces
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - services
+    verbs:
+    - create
     - delete
-    - update
+    - get
+    - list
     - patch
+    - update
+    - watch
   - apiGroups:
     - admissionregistration.k8s.io
     resources:
@@ -45,12 +52,12 @@ rules:
     - validatingwebhookconfigurations
     verbs:
     - create
+    - delete
     - get
     - list
-    - watch
-    - delete
-    - update
     - patch
+    - update
+    - watch
   - apiGroups:
     - apps
     resources:
@@ -58,12 +65,12 @@ rules:
     - replicasets
     verbs:
     - create
+    - delete
     - get
     - list
-    - delete
+    - patch
     - update
     - watch
-    - update
   - apiGroups:
     - cert-manager.io
     resources:
@@ -77,19 +84,7 @@ rules:
     - update
     - watch
   - apiGroups:
-    - overcommit.inditex.dev
-    resources:
-    - "*"
-    verbs:
-    - create
-    - delete
-    - get
-    - list
-    - patch
-    - update
-    - watch
-  - apiGroups:
-    - "coordination.k8s.io"
+    - coordination.k8s.io
     resources:
     - leases
     verbs:
@@ -100,6 +95,35 @@ rules:
     - patch
     - update
     - watch
+  - apiGroups:
+    - overcommit.inditex.dev
+    resources:
+    - overcommitclasses
+    - overcommits
+    verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+  - apiGroups:
+    - overcommit.inditex.dev
+    resources:
+    - overcommitclasses/finalizers
+    - overcommits/finalizers
+    verbs:
+    - update
+  - apiGroups:
+    - overcommit.inditex.dev
+    resources:
+    - overcommitclasses/status
+    - overcommits/status
+    verbs:
+    - get
+    - patch
+    - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

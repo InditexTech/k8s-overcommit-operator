@@ -274,21 +274,7 @@ func CalculateResources(limits corev1.ResourceList, class OvercommitClass) corev
 
 ### RBAC Permissions
 
-The operator requires minimal permissions:
-
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: manager-role
-rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["overcommit.inditex.dev"]
-  resources: ["overcommits", "overcommitclasses"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-```
+The controller ClusterRole is defined in `config/rbac/role.yaml` (generated from kubebuilder markers). The Helm chart uses the same explicit rules, plus `namespaces` get/list/watch for label lookups, and keeps the binding to the built-in `view` ClusterRole for owner resolution.
 
 ### Certificate Management
 
