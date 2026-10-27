@@ -8,11 +8,11 @@ updates:
     directories:
       - '/'
     exclude-paths:
-      - '/docs'
-      - '/example'
-      - '/e2e'
-      - '/archetype-resources'
-      - '/src/test/projects'
+      - 'docs'
+      - 'example'
+      - 'e2e'
+      - 'archetype-resources'
+      - 'src/test/projects'
     schedule:
       interval: weekly
       day: monday
@@ -39,11 +39,11 @@ updates:
     directories:
       - '/'
     exclude-paths:
-      - '/docs'
-      - '/example'
-      - '/e2e'
-      - '/archetype-resources'
-      - '/src/test/projects'
+      - 'docs'
+      - 'example'
+      - 'e2e'
+      - 'archetype-resources'
+      - 'src/test/projects'
     schedule:
       interval: weekly
       day: monday
