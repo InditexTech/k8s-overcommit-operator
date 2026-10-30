@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
 
       - name: Lint GitHub Actions workflows
-        uses: reviewdog/action-actionlint@2085657ab2c7f48c58edcc767fba576f63bea76b # v1.77.0
+        uses: reviewdog/action-actionlint@6a9ff88b9bb9c12ff3d7340e267f0f59effaa7cd # v1.80.1
         with:
           reporter: github-annotations
           fail_level: error
