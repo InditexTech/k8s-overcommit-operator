@@ -1,29 +1,76 @@
+# SPDX-FileCopyrightText: INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
+# SPDX-License-Identifier: Apache-2.0
+
+# Managed by InditexTech CI governance - do not edit by hand.
+# Reconciliation overwrites local edits; record this path in
+# .sync-exclude to take ownership of the file.
 version: 2
+
 updates:
   - package-ecosystem: gomod
-    directory: /
+    directories:
+      - '/'
+    exclude-paths:
+      - 'docs'
+      - 'example'
+      - 'e2e'
+      - 'archetype-resources'
+      - 'src/test/projects'
     schedule:
       interval: weekly
-    commit-message:
-      prefix: chore(deps)
-
+      day: monday
+      time: '04:00'
+      timezone: UTC
+    cooldown:
+      default-days: 3
+      semver-minor-days: 7
+      semver-patch-days: 3
+      semver-major-days: 30
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+      major:
+        update-types:
+          - major
+      codeql-action:
+        patterns:
+          - 'github/codeql-action/*'
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - '/'
+    exclude-paths:
+      - 'docs'
+      - 'example'
+      - 'e2e'
+      - 'archetype-resources'
+      - 'src/test/projects'
     schedule:
       interval: weekly
-    commit-message:
-      prefix: chore(deps)
-
-  - package-ecosystem: docker
-    directory: /
-    schedule:
-      interval: weekly
-    commit-message:
-      prefix: chore(deps)
-
-  - package-ecosystem: docker
-    directory: /hack/tilt
-    schedule:
-      interval: weekly
-    commit-message:
-      prefix: chore(deps)
+      day: monday
+      time: '04:00'
+      timezone: UTC
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 5
+    groups:
+      codeql-action:
+        patterns:
+          - 'github/codeql-action/*'
+    ignore:
+      - dependency-name: 'InditexTech/gh-actions/*'
+      - dependency-name: 'SonarSource/sonarqube-scan-action'
+      - dependency-name: 'actions/checkout'
+      - dependency-name: 'actions/download-artifact'
+      - dependency-name: 'actions/upload-artifact'
+      - dependency-name: 'asdf-vm/actions/install'
+      - dependency-name: 'fsfe/reuse-action'
+      - dependency-name: 'github/codeql-action/analyze'
+      - dependency-name: 'github/codeql-action/init'
+      - dependency-name: 'github/codeql-action/upload-sarif'
+      - dependency-name: 'newrelic/repolinter-action'
+      - dependency-name: 'ossf/scorecard-action'
+      - dependency-name: 'reviewdog/action-actionlint'
+      - dependency-name: 'webiny/action-conventional-commits'
