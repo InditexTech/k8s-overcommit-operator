@@ -94,3 +94,71 @@ After installation, validate that the operator is running:
 ```bash
 kubectl get pods -n k8s-overcommit
 ```
+
+---
+
+## 🎯 Create the Custom Resources
+
+The operator is configured through two cluster-scoped custom resources from the
+`overcommit.inditex.dev/v1alphav1` API group (see
+[`api/v1alphav1/`](../api/v1alphav1/)). They are **not** created by the Helm chart by default
+(`createOvercommit: false`, `createClasses: false`), so create them once the operator is running.
+
+### 1️⃣ Create the `Overcommit` resource
+
+`Overcommit` is a **singleton**: the CRD rejects any object whose `metadata.name` is not `cluster`.
+It tells the operator which label selects an `OvercommitClass` on pods and namespaces.
+
+```yaml
+apiVersion: overcommit.inditex.dev/v1alphav1
+kind: Overcommit
+metadata:
+  name: cluster
+spec:
+  # Required (min length 1). Default of the Helm chart: inditex.com/overcommit-class
+  overcommitLabel: inditex.com/overcommit-class
+  # Optional: labels/annotations added to the generated resources
+  labels:
+    example: "label"
+  annotations:
+    example: "annotation"
+  # Optional: scheduling constraints for the generated deployments
+  nodeSelector: {}
+  tolerations: []
+```
+
+### 2️⃣ Create one or more `OvercommitClass` resources
+
+```yaml
+apiVersion: overcommit.inditex.dev/v1alphav1
+kind: OvercommitClass
+metadata:
+  name: my-class
+spec:
+  cpuOvercommit: 0.1
+  memoryOvercommit: 0.8
+  excludedNamespaces: ".*(^(openshift|k8s-overcommit|kube).*).*"
+  isDefault: true
+```
+
+A complete example, including the optional fields, is available in
+[`overcommitClass-example.yaml`](./overcommitClass-example.yaml).
+
+### 3️⃣ Label workloads
+
+```bash
+kubectl label namespace my-namespace inditex.com/overcommit-class=my-class
+# or, for a single workload:
+kubectl label deployment my-app inditex.com/overcommit-class=my-class
+```
+
+Pods whose namespace or pod template carries the `overcommitLabel` key get their CPU and memory
+**requests** set to `limits × overcommit ratio`; limits are never modified.
+
+### 4️⃣ Verify
+
+```bash
+kubectl get overcommit cluster                 # Overcommit singleton
+kubectl get overcommitclass                    # columns: CPU, Memory, Default (short names: oc, ocs)
+kubectl get overcommitclass my-class -o yaml   # status.conditions / status.resources
+```

@@ -17,6 +17,9 @@ SPDX-License-Identifier: CC-BY-4.0
 - [Controller Logic](#-controller-logic)
 - [Resource Management](#-resource-management)
 - [Security Model](#-security-model)
+- [Monitoring and Observability](#-monitoring-and-observability)
+- [Configuration Examples](#-configuration-examples)
+- [References](#-references)
 
 ---
 
@@ -44,12 +47,18 @@ The **k8s-overcommit Operator** is a Kubernetes-native operator designed to inte
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| **Overcommit Controller** | Manages main Overcommit resource and deploys OvercommitClass controllers | [`internal/controller/overcommitclass/`](../internal/controller/overcommitclass/) |
-| **OvercommitClass Controller** | Watches OvercommitClass resources and configures webhooks | [`internal/resources/generate_resources_overcommit_class_controller_controller.go`](../internal/resources/generate_resources_overcommit_class_controller_controller.go) |
-| **Pod Mutating Webhook** | Modifies pod resource requests based on overcommit policies | [`api/v1alphav1/overcommitclass_webhook.go`](../internal/webhook/v1alphav1/mutating/pod_webhook.go) |
-| **OvercommitClass Validating Webhook** | Validates OvercommitClass resource specifications | [`internal/webhook/v1alphav1/mutating/pod_webhook.go`](../api/v1alphav1/overcommitclass_webhook.go) |
-| **Pod Validating Webhook** | Validates Pod With Unexisting Class | [`internal/webhook/v1alphav1/validating/pod_webhook.go`](../internal/webhook/v1alphav1/validating/pod_webhook.go) |
+| **Overcommit Controller** | Reconciles the `Overcommit` singleton and generates the operator's own resources (OvercommitClass controller deployment, pod validating webhook, issuer) | [`internal/controller/overcommit/`](../internal/controller/overcommit/) |
+| **OvercommitClass Controller** | Watches `OvercommitClass` resources and generates one webhook deployment, service, certificate and `MutatingWebhookConfiguration` per class | [`internal/controller/overcommitclass/`](../internal/controller/overcommitclass/) |
+| **Resource Generators** | Build the Kubernetes objects created by both controllers | [`internal/resources/`](../internal/resources/) |
+| **Pod Mutating Webhook** | Mutates pod resource requests based on overcommit policies | [`internal/webhook/v1alphav1/mutating/pod_webhook.go`](../internal/webhook/v1alphav1/mutating/pod_webhook.go) |
+| **Pod Validating Webhook** | Rejects pods that carry the `overcommitLabel` but reference a non-existent `OvercommitClass` | [`internal/webhook/v1alphav1/validating/pod_webhook.go`](../internal/webhook/v1alphav1/validating/pod_webhook.go) |
+| **OvercommitClass Validating Webhook** | Validates `OvercommitClass` specifications | [`api/v1alphav1/overcommitclass_webhook.go`](../api/v1alphav1/overcommitclass_webhook.go) (rules in [`webhook_validations.go`](../api/v1alphav1/webhook_validations.go)) |
 | **Certificate Manager** | Generates and manages TLS certificates for webhooks | [`internal/resources/generate_issuer.go`](../internal/resources/generate_issuer.go) |
+
+> [!NOTE]
+> The controller manager runs with `ENABLE_CONTROLLER=true`; the deployments generated for each
+> class run the same binary with `ENABLE_CONTROLLER=false`, `ENABLE_POD_MUTATING_WEBHOOK=true` and
+> `OVERCOMMIT_CLASS_NAME=<class>`, so every class gets its own webhook pod and TLS certificate.
 
 ---
 
@@ -80,25 +89,33 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A[Pod Admission Request] --> B{Pod has overcommit label?}
-    B -->|Yes| C[Get OvercommitClass by label]
-    B -->|No| D{Namespace has overcommit label?}
-    D -->|Yes| E[Get OvercommitClass from namespace]
-    D -->|No| F{Default OvercommitClass exists?}
-    F -->|Yes| G[Use default OvercommitClass]
-    F -->|No| H[Skip overcommit - no modification]
-
-    C --> I{OvercommitClass found?}
-    E --> I
-    G --> I
-    I -->|Yes| J{Namespace excluded?}
-    I -->|No| H
-    J -->|Yes| H
-    J -->|No| K[Apply overcommit calculations]
+    A[Pod Admission Request] --> S{Namespace matches class excludedNamespaces?}
+    S -->|Yes| M[Return original pod spec]
+    S -->|No| B{Pod has overcommitLabel?}
+    B -->|Yes| C{OvercommitClass exists?}
+    C -->|Yes| K[Apply overcommit calculations]
+    C -->|No| D{Namespace has overcommitLabel?}
+    B -->|No| D
+    D -->|Yes| E{OvercommitClass exists?}
+    E -->|Yes| K
+    E -->|No| F{Default OvercommitClass exists?}
+    D -->|No| F
+    F -->|Yes| K
+    F -->|No| H[Ratios 1.0 - requests unchanged]
+    H --> M
     K --> L[Return modified pod spec]
-
-    H --> M[Return original pod spec]
 ```
+
+The resolution order is **pod label → namespace label → default class**. Two details worth keeping in mind:
+
+- `excludedNamespaces` is enforced by the generated `MutatingWebhookConfiguration` as a match
+  condition on `object.metadata.namespace`; matching requests never reach the webhook.
+- The mutating webhook's `failurePolicy` is `Fail`, so a class whose webhook pod cannot be reached
+  blocks admission of the pods it selects (including its own namespace unless excluded).
+
+Once a pod has been mutated, the annotation `overcommit.inditex.dev/applied=<class>` (together with
+`overcommit.inditex.dev/cpu` and `overcommit.inditex.dev/memory`) is set so reinvocations do not
+apply the ratios twice.
 
 ---
 
@@ -124,11 +141,16 @@ spec:
     description: "Main overcommit configuration"
 ```
 
-**Key Fields:**
+**Key Fields** (`OvercommitSpec`):
 
-- `overcommitLabel`: Label key used to identify overcommit class on pods/namespaces
-- `labels`: Labels applied to generated resources
-- `annotations`: Annotations applied to generated resources
+- `overcommitLabel` (`string`, **required**, min length 1): Label key used to identify the overcommit class on pods/namespaces
+- `labels` (`map[string]string`, optional): Labels applied to generated resources
+- `annotations` (`map[string]string`, optional): Annotations applied to generated resources
+- `nodeSelector` (`map[string]string`, optional): Node selector for the generated deployments
+- `tolerations` (`[]corev1.Toleration`, optional): Tolerations for the generated deployments
+
+**Status** (`OvercommitStatus`): `resources` (`[]ResourceStatus{name, ready}`) and `conditions`
+(`[]metav1.Condition`, type `ResourcesReady`).
 
 ### OvercommitClass Resource
 
@@ -148,16 +170,37 @@ spec:
     example: "label"
   annotations:
     description: "High-density workloads"
+  nodeSelector:
+    example.com/node-pool: system
+  tolerations:
+    - key: example.com/dedicated
+      operator: Equal
+      value: overcommit
+      effect: NoSchedule
 ```
 
-**Key Fields:**
+**Key Fields** (`OvercommitClassSpec`):
 
-- `cpuOvercommit`: Ratio of CPU requests to limits (0.0-1.0)
-- `memoryOvercommit`: Ratio of memory requests to limits (0.0-1.0)
-- `isDefault`: Whether this class is used when no specific class is found
-- `excludedNamespaces`: Regex pattern for namespaces to exclude
-- `labels`: Labels applied to generated resources
-- `annotations`: Annotations applied to generated resources
+| Field | Type | Required | Validation / meaning |
+|-------|------|----------|----------------------|
+| `cpuOvercommit` | `float64` | yes | CRD range `0.0001–1`; webhook rejects `<= 0`, `> 1` and values with more than 4 decimals. CPU request = CPU limit × ratio |
+| `memoryOvercommit` | `float64` | yes | Same validation as `cpuOvercommit`. Memory request = memory limit × ratio |
+| `excludedNamespaces` | `string` | yes | Go regexp (max 512 characters) matched against the pod namespace; matching namespaces are never mutated |
+| `isDefault` | `bool` | no (default `false`) | Class used when neither the pod nor the namespace carries a class. Only one class can be default (enforced by the validating webhook) |
+| `labels` | `map[string]string` | no | Labels added to the resources generated for the class |
+| `annotations` | `map[string]string` | no | Annotations added to the resources generated for the class |
+| `nodeSelector` | `map[string]string` | no | Node selector for the class webhook deployment |
+| `tolerations` | `[]corev1.Toleration` | no | Tolerations for the class webhook deployment |
+
+A ratio of `1` leaves the corresponding request untouched. When no ratio can be resolved, the
+operator uses `1.0` for both values, i.e. it does not modify the pod.
+
+**Status** (`OvercommitClassStatus`): `resources` (`[]ResourceStatus{name, ready}` for the generated
+deployment, service, certificate and webhook) and `conditions` (`[]metav1.Condition`, type
+`ResourcesReady`).
+
+`OvercommitClass` is cluster-scoped with short names `oc` and `ocs`; `kubectl get overcommitclass`
+prints the `CPU`, `Memory` and `Default` columns.
 
 ---
 
@@ -165,33 +208,70 @@ spec:
 
 ### Mutating Webhook Configuration
 
+One `MutatingWebhookConfiguration` is generated per `OvercommitClass`, owned by the class
+(see [`internal/resources/generate_resources_pod_mutating_webhooks.go`](../internal/resources/generate_resources_pod_mutating_webhooks.go)):
+
 ```yaml
 apiVersion: admissionregistration.k8s.io/v1
-kind: MutatingAdmissionWebhook
+kind: MutatingWebhookConfiguration
 metadata:
-  name: overcommit-mutating-webhook
+  name: <class>-overcommit-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: <operator-namespace>/<class>-webhook-certificate
 webhooks:
-- name: pod-overcommit.overcommit.inditex.dev
+- name: <class>-overcommit.inditex.dev
   clientConfig:
     service:
-      name: webhook-service
-      namespace: k8s-overcommit-operator-system
-      path: /mutate
+      name: <class>-webhook-service
+      namespace: <operator-namespace>
+      path: /mutate--v1-pod
   rules:
-  - operations: ["CREATE", "UPDATE"]
+  - operations: ["CREATE"]
     apiGroups: [""]
     apiVersions: ["v1"]
     resources: ["pods"]
+  - operations: ["UPDATE"]
+    apiGroups: [""]
+    apiVersions: ["v1"]
+    resources: ["pods/resize"]
+  failurePolicy: Fail
+  sideEffects: None
+  reinvocationPolicy: IfNeeded
+  matchConditions:
+  - name: exclude-namespaces
+    expression: "!object.metadata.namespace.matches('<spec.excludedNamespaces>')"
+  objectSelector:
+    matchExpressions:
+    - key: <spec.overcommitLabel>
+      operator: In
+      values: ["<class>"]
 ```
+
+If `spec.isDefault` is `true`, a second webhook `default-<class>-overcommit.inditex.dev` is appended
+to the same configuration; it selects pods where the label is **absent**
+(`operator: DoesNotExist`) so the default class also applies to unlabelled workloads.
+
+In addition, the `Overcommit` controller creates:
+
+- A pod `ValidatingWebhookConfiguration` (`podvalidation.overcommit.inditex.dev`, path
+  `/validate--v1-pod`, `failurePolicy: Fail`, `objectSelector` on the presence of `overcommitLabel`)
+  that rejects pods carrying the label whose value does not match an existing `OvercommitClass`.
+- `ValidatingWebhookConfiguration` for `overcommitclasses` (`overcommitclass.overcommit.inditex.dev`,
+  path `/validate-overcommit-inditex-dev-v1alphav1-overcommitclass`).
 
 ### Webhook Logic Implementation
 
-The webhook implementation in [`api/v1alphav1/overcommitclass_webhook.go`](../api/v1alphav1/overcommitclass_webhook.go) follows this logic:
+The pod mutation logic in [`pkg/overcommit/`](../pkg/overcommit/) follows this logic:
 
-1. **Label Resolution**: Check pod → namespace → default class
-2. **Namespace Exclusion**: Apply regex patterns to exclude critical namespaces
-3. **Calculation**: Apply overcommit ratios to resource limits
-4. **Validation**: Ensure calculations are within valid ranges
+1. **Label Resolution**: Check pod → namespace → default class (`spec.isDefault: true`)
+2. **Namespace Exclusion**: Enforced by the webhook match condition built from `spec.excludedNamespaces`
+3. **Calculation**: Set `requests = limits × ratio` for CPU and memory of every container
+   (and of init containers on create/update); limits are left untouched
+4. **Idempotency**: Record the applied class in the `overcommit.inditex.dev/applied` annotation
+
+The `OvercommitClass` validator ([`api/v1alphav1/overcommitclass_webhook.go`](../api/v1alphav1/overcommitclass_webhook.go))
+checks on create/update: at most one default class, ratios in `(0, 1]` with at most 4 decimals, and a
+valid `excludedNamespaces` regex.
 
 ---
 
@@ -199,11 +279,14 @@ The webhook implementation in [`api/v1alphav1/overcommitclass_webhook.go`](../ap
 
 ### Overcommit Controller
 
-Located in [`internal/controller/overcommitclass/`](../internal/controller/overcommitclass/), manages:
-
-- **Main Overcommit Resource**: Watches for cluster-wide configuration
-- **Dynamic Deployment**: Creates OvercommitClass controllers on demand
-- **Resource Cleanup**: Removes controllers when Overcommit is deleted
+- **Overcommit Controller** ([`internal/controller/overcommit/`](../internal/controller/overcommit/)): reconciles
+  the `Overcommit` singleton, sets itself as owner of every `OvercommitClass`, and creates the
+  self-signed `Issuer`, the OvercommitClass validating webhook and the pod validating webhook.
+- **OvercommitClass Controller** ([`internal/controller/overcommitclass/`](../internal/controller/overcommitclass/)):
+  for each class, creates/updates its webhook `Deployment`, `Service`, `Certificate` and
+  `MutatingWebhookConfiguration`, and reports them in `status.resources` / `status.conditions`.
+- **Resource Cleanup**: generated objects are garbage-collected through owner references when the
+  `OvercommitClass` or the `Overcommit` singleton is deleted.
 
 ### Reconciliation Loop
 
@@ -225,13 +308,19 @@ flowchart LR
 
 The operator generates several Kubernetes resources:
 
-| Resource Type | Purpose | Generated By |
-|---------------|---------|--------------|
-| **Deployment** | Runs the OvercommitClass controller | [`generate_resources_overcommit_class_controller_controller.go`](../internal/resources/generate_resources_overcommit_class_controller_controller.go) |
-| **Service** | Exposes webhook endpoints | Controller logic |
-| **Issuer** | Manages TLS certificates | [`generate_issuer.go`](../internal/resources/generate_issuer.go) |
-| **Certificate** | TLS certs for webhooks | cert-manager |
-| **MutatingAdmissionWebhook** | Webhook configuration | Controller logic |
+| Resource Type | Name (pattern) | Purpose | Generated By |
+|---------------|----------------|---------|--------------|
+| **Issuer** | `k8s-overcommit-issuer` | Self-signed issuer for webhook certificates | [`generate_issuer.go`](../internal/resources/generate_issuer.go) |
+| **Deployment** | `k8s-overcommit-overcommitclass-controller` | Runs the OvercommitClass controller | [`generate_resources_overcommit_class_controller_controller.go`](../internal/resources/generate_resources_overcommit_class_controller_controller.go) |
+| **Deployment** | `<class>-overcommit-webhook` | Runs the mutating webhook of one class | [`generate_resources_pod_mutating_webhooks.go`](../internal/resources/generate_resources_pod_mutating_webhooks.go) |
+| **Service** | `<class>-webhook-service` | Exposes the class webhook on port 443 → 9443 | same file |
+| **Certificate** | `<class>-webhook-certificate` (secret `<class>-webhook-secret`) | TLS certificate for the class webhook | same file |
+| **MutatingWebhookConfiguration** | `<class>-overcommit-webhook` | Selects pods for the class | same file |
+| **Deployment / Service / Certificate / ValidatingWebhookConfiguration** | pod validating webhook (`k8s-overcommit-pod-validating-webhook*`) | Rejects pods referencing a missing class | [`generate_resources_validating_webhooks.go`](../internal/resources/generate_resources_validating_webhooks.go) |
+| **Deployment / Service / Certificate / ValidatingWebhookConfiguration** | OvercommitClass validating webhook | Validates `OvercommitClass` objects | [`generate_resources_validating_webhooks.go`](../internal/resources/generate_resources_validating_webhooks.go) |
+
+The `nodeSelector` and `tolerations` of the `Overcommit` resource are applied to the deployments
+generated for it, while those of an `OvercommitClass` are applied to that class' webhook deployment.
 
 ---
 
@@ -239,34 +328,33 @@ The operator generates several Kubernetes resources:
 
 ### Overcommit Calculation
 
-The core calculation logic is implemented in [`pkg/overcommit/`](../pkg/overcommit/):
+The core calculation logic is implemented in [`pkg/overcommit/make_overcommit.go`](../pkg/overcommit/make_overcommit.go).
+For every container (and init container on create/update) that defines a CPU or memory limit:
 
 ```go
-// Example calculation
-func CalculateResources(limits corev1.ResourceList, class OvercommitClass) corev1.ResourceList {
-    requests := corev1.ResourceList{}
+// Simplified excerpt of mutateContainers
+if cpuLimit, ok := limits[corev1.ResourceCPU]; ok && cpuValue != 1 {
+    newCPURequest := float64(cpuLimit.MilliValue()) * cpuValue
+    requests[corev1.ResourceCPU] = *resource.NewMilliQuantity(int64(newCPURequest), resource.DecimalSI)
+}
 
-    if cpu, ok := limits[corev1.ResourceCPU]; ok {
-        cpuRequest := cpu.DeepCopy()
-        cpuRequest.SetScaled(cpuRequest.ScaledValue(resource.Milli) * int64(class.Spec.CPUOvercommit * 1000), resource.Milli)
-        requests[corev1.ResourceCPU] = cpuRequest
-    }
-
-    if memory, ok := limits[corev1.ResourceMemory]; ok {
-        memoryRequest := memory.DeepCopy()
-        memoryRequest.SetScaled(memoryRequest.Value() * int64(class.Spec.MemoryOvercommit), resource.BinarySI)
-        requests[corev1.ResourceMemory] = memoryRequest
-    }
-
-    return requests
+if memoryLimit, ok := limits[corev1.ResourceMemory]; ok && memoryValue != 1 {
+    newMemoryRequest := float64(memoryLimit.Value()) * memoryValue
+    requests[corev1.ResourceMemory] = *resource.NewQuantity(int64(newMemoryRequest), resource.BinarySI)
 }
 ```
 
+`cpuValue` / `memoryValue` come from the resolved `OvercommitClass` (`spec.cpuOvercommit`,
+`spec.memoryOvercommit`). A ratio of `1` leaves the request untouched; a pod is never given a
+request when the limit is absent. `pods/resize` sub-resource updates are handled separately
+(`OvercommitOnResize`) and only touch regular containers.
+
 ### Resource Validation
 
-- **Range Validation**: Overcommit ratios must be between 0.0 and 1.0
-- **Resource Presence**: Only applies to pods with resource limits
-- **Namespace Exclusion**: Regex-based exclusion of critical namespaces
+- **Range Validation**: Overcommit ratios must be in the `(0, 1]` range with at most 4 decimals
+  (CRD minimum `0.0001`, maximum `1`, plus the validating webhook)
+- **Resource Presence**: Only containers with CPU/memory limits are modified
+- **Namespace Exclusion**: Regex (`excludedNamespaces`) matched against the pod namespace
 
 ---
 
@@ -294,11 +382,13 @@ The controller ClusterRole is defined in `config/rbac/role.yaml` (generated from
 
 ### Metrics
 
-The operator exposes Prometheus metrics on port 8080:
+The operator exposes Prometheus metrics on port 8080. The names are prefixed with
+`k8s_overcommit_operator_`; see [metrics.md](./metrics.md) for the full list, for example:
 
-- `overcommit_pods_modified_total`: Total number of pods modified
-- `overcommit_class_applications_total`: Total applications of each class
-- `overcommit_webhook_duration_seconds`: Webhook processing time
+- `k8s_overcommit_operator_pods_requested_total{class}`: Pods submitted to the webhook per class
+- `k8s_overcommit_operator_mutated_pods_total{class}`: Pods mutated per class
+- `k8s_overcommit_operator_total_classes`: Number of `OvercommitClass` resources
+- `k8s_overcommit_operator_version`: Operator version
 
 ### Logging
 
@@ -331,6 +421,8 @@ spec:
   memoryOvercommit: 0.9  # Allow high memory usage
   isDefault: true
   excludedNamespaces: ".*(kube|openshift).*"
+  nodeSelector:
+    example.com/env: development
 ```
 
 ### Production Environment

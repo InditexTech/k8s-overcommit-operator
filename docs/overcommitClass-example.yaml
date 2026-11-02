@@ -8,10 +8,23 @@ kind: OvercommitClass
 metadata:
   name: my-class
 spec:
+  # Required: ratio (requests = limits * ratio) in the range (0, 1], 4 decimals max.
   cpuOvercommit: 0.1
   memoryOvercommit: 0.8
+  # Required: regex matched against the pod namespace. Pods of matching namespaces are never mutated.
+  excludedNamespaces: ".*(^(openshift|k8s-overcommit|kube).*).*"
+  # Optional: only one OvercommitClass can be the default.
   isDefault: true
+  # Optional: labels and annotations added to the resources generated for this class.
   labels:
     example: "label"
   annotations:
     example: "annotation"
+  # Optional: scheduling constraints for the webhook deployment generated for this class.
+  nodeSelector:
+    example.com/node-pool: system
+  tolerations:
+    - key: example.com/dedicated
+      operator: Equal
+      value: overcommit
+      effect: NoSchedule
