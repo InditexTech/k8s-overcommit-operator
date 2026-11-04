@@ -37,7 +37,7 @@ spec:
         args:
           - --metrics-bind-address=:8080
           - -metrics-secure=false
-        image: {{$.Values.deployment.image.registry}}/{{$.Values.deployment.image.image}}:{{$.Values.deployment.image.tag}}
+        image: {{ $.Values.deployment.image.registry }}/{{ $.Values.deployment.image.image }}:{{ $.Values.deployment.image.tag }}
         env:
         - name: ENABLE_OVERCOMMIT_CONTROLLER
           value: 'true'

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-{{ if $.Values.createClasses}}
+{{ if $.Values.createClasses }}
 ---
 apiVersion: overcommit.inditex.dev/v1alphav1
 kind: OvercommitClass
