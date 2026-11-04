@@ -4,21 +4,53 @@ on:
 permissions:
   contents: read
 jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: Unit tests 🧪
+    steps:
+    - name: Checkout 🧲
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Setup Go ⬇️
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Run unit tests 🧪
+      run: make test
+
+  fuzz:
+    runs-on: ubuntu-latest
+    name: Fuzz tests 🎲
+    steps:
+    - name: Checkout 🧲
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Setup Go ⬇️
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Fuzz the pod mutation logic 🎲
+      run: go test -fuzz=FuzzMutateContainers -fuzztime=60s ./pkg/overcommit
+
   e2e:
     runs-on: ubuntu-latest
     name: E2E tests 🔃
     steps:
     - name: Checkout 🧲
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Restore go build cache ⏬
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/go-build
         key: ${{ runner.os }}-go-build-v1
 
     - name: Setup Go ⬇️
-      uses: actions/setup-go@v7
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version: 1.26.8
 
