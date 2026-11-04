@@ -34,7 +34,7 @@ jobs:
         cache: true
 
     - name: Fuzz the pod mutation logic 🎲
-      run: go test -fuzz=FuzzMutateContainers -fuzztime=60s ./pkg/overcommit
+      run: go test -run '^$' -fuzz=FuzzMutateContainers -fuzztime=60s ./pkg/overcommit
 
   e2e:
     runs-on: ubuntu-latest
