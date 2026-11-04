@@ -4,6 +4,12 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
+    categories: OpenShift Optional
+    containerImage: ghcr.io/inditextech/k8s-overcommit-operator:1.3.5
+    description: Lower pod resource requests from declarative overcommit classes,
+      so the scheduler can pack more workloads per node.
+    repository: https://github.com/InditexTech/k8s-overcommit-operator
+    support: https://github.com/InditexTech/k8s-overcommit-operator/issues
   name: k8s-overcommit.v0.0.0
   namespace: placeholder
 spec:
@@ -20,19 +26,22 @@ spec:
       kind: Overcommit
       name: overcommits.overcommit.inditex.dev
       version: v1
-    required:
-    - description: Certificate resource from cert-manager
-      displayName: Certificate
-      kind: Certificate
-      name: certificates.cert-manager.io
-      version: v1
-    - description: Issuer resource from cert-manager
-      displayName: Issuer
-      kind: Issuer
-      name: issuers.cert-manager.io
-      version: v1
-  description: Operator for make overcommit to pods based in classes
-  displayName: k8s-overcommit-operator
+  description: |
+    The K8s Overcommit Operator manages pod resource overcommit on Kubernetes clusters.
+    It rewrites container requests at admission time as ratio x limit, driven by
+    declarative OvercommitClass resources, so the scheduler can pack more workloads per
+    node without touching the limits that protect the node.
+
+    ### Features
+    - Overcommit classes with per-class CPU and memory ratios, namespace exclusions, node selectors and tolerations.
+    - One mutating webhook per class, generated and reconciled by the operator itself.
+    - Default class for namespace-level opt-in through a single label.
+    - Idempotent mutation: pods already processed by a class are skipped on re-admission.
+
+    ### Prerequisites
+    - cert-manager is mandatory: the operator issues a Certificate and an Issuer for every overcommit class, and without them the generated mutating webhooks never get a serving certificate. The bundle declares it as an OLM dependency on cert-manager.io/v1 (Certificate, Issuer), so OLM installs cert-manager when no operator provides that API.
+    - The operator installs cluster-wide (AllNamespaces) and creates MutatingWebhookConfigurations.
+  displayName: K8s Overcommit Operator
   icon:
   - base64data: ""
     mediatype: ""
@@ -53,14 +62,22 @@ spec:
   - ocp
   - k8s
   - overcommit
+  - scheduling
+  - capacity
+  - resources
   links:
-  - name: K8s Overcommit
-    url: https://k8s-overcommit.domain
+  - name: K8s Overcommit Operator Documentation
+    url: https://github.com/InditexTech/k8s-overcommit-operator/tree/1.3.5/docs
+  - name: K8s Overcommit Operator Source Code
+    url: https://github.com/InditexTech/k8s-overcommit-operator
+  - name: Blog Post
+    url: https://medium.com/@InditexTech/when-is-a-cluster-really-full-unlocking-hidden-capacity-with-the-k8s-overcommit-operator-9fd75af95712
   maintainers:
-  - email: enriqueavi@inditex.com
-    name: enriqueAndresVillar
+  - email: k8s-overcommit-maintainers@inditex.com
+    name: Enrique Andrés Villar
   maturity: alpha
   minKubeVersion: 1.22.0
   provider:
-    name: inditexTech
+    name: InditexTech
+    url: https://github.com/InditexTech
   version: 0.0.0
