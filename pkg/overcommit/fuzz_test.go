@@ -6,6 +6,7 @@
 package overcommit
 
 import (
+	"reflect"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -18,82 +19,109 @@ func validRatio(r float64) bool {
 	return r >= 0.0001 && r <= 1
 }
 
+// fuzzInput is one generated case for the mutation target.
+type fuzzInput struct {
+	cpuMilli     int64
+	memBytes     int64
+	cpuRatio     float64
+	memRatio     float64
+	withLimits   bool
+	withRequests bool
+}
+
+// inDomain keeps the target inside the values the API and the CRD admit:
+// ratios in [0.0001, 1] and limits small enough that the float64 -> int64
+// conversions in mutateContainers cannot overflow.
+func (in fuzzInput) inDomain() bool {
+	return validRatio(in.cpuRatio) && validRatio(in.memRatio) &&
+		in.cpuMilli >= 0 && in.cpuMilli <= 1_000_000_000 &&
+		in.memBytes >= 0 && in.memBytes <= 1<<50
+}
+
+// container builds the input container and the limits it declares.
+func (in fuzzInput) container() (corev1.Container, corev1.ResourceList) {
+	limits := corev1.ResourceList{
+		corev1.ResourceCPU:    *resource.NewMilliQuantity(in.cpuMilli, resource.DecimalSI),
+		corev1.ResourceMemory: *resource.NewQuantity(in.memBytes, resource.BinarySI),
+	}
+
+	c := corev1.Container{Name: "fuzzed"}
+	if in.withLimits {
+		c.Resources.Limits = limits
+	}
+	if in.withRequests {
+		c.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    *resource.NewMilliQuantity(1, resource.DecimalSI),
+			corev1.ResourceMemory: *resource.NewQuantity(1, resource.BinarySI),
+		}
+	}
+	return c, limits
+}
+
 // FuzzMutateContainers exercises the request rewriting done by the mutating
 // webhook: it must never panic and must keep every generated request inside
 // [0, limit], for any input the API admits.
 func FuzzMutateContainers(f *testing.F) {
-	// Seed corpus: CRD boundaries, typical ratios and the no-op ratio of 1.
-	f.Add(int64(1000), int64(1<<30), 0.0001, 0.0001, true, true)
-	f.Add(int64(1000), int64(1<<30), 1.0, 1.0, true, true)
-	f.Add(int64(500), int64(256<<20), 0.5, 0.8, true, false)
-	f.Add(int64(0), int64(0), 0.5, 0.5, true, true)
-	f.Add(int64(32000), int64(512<<20), 1.0, 0.0001, true, true)
-	f.Add(int64(2000), int64(64<<20), 0.5, 0.5, false, true)
+	for _, seed := range []fuzzInput{
+		{1000, 1 << 30, 0.0001, 0.0001, true, true},
+		{1000, 1 << 30, 1.0, 1.0, true, true},
+		{500, 256 << 20, 0.5, 0.8, true, false},
+		{0, 0, 0.5, 0.5, true, true},
+		{32000, 512 << 20, 1.0, 0.0001, true, true},
+		{2000, 64 << 20, 0.5, 0.5, false, true},
+	} {
+		f.Add(seed.cpuMilli, seed.memBytes, seed.cpuRatio, seed.memRatio, seed.withLimits, seed.withRequests)
+	}
 
 	f.Fuzz(func(t *testing.T, cpuMilli, memBytes int64, cpuRatio, memRatio float64, withLimits, withRequests bool) {
-		// Stay inside the CRD-validated domain, and keep limits in a range where
-		// the float64 -> int64 conversions in mutateContainers cannot overflow.
-		if !validRatio(cpuRatio) || !validRatio(memRatio) {
-			t.Skip()
-		}
-		if cpuMilli < 0 || cpuMilli > 1_000_000_000 || memBytes < 0 || memBytes > 1<<50 {
+		in := fuzzInput{cpuMilli, memBytes, cpuRatio, memRatio, withLimits, withRequests}
+		if !in.inDomain() {
 			t.Skip()
 		}
 
-		container := corev1.Container{Name: "fuzzed"}
-		var cpuLimit, memLimit resource.Quantity
-		if withLimits {
-			cpuLimit = *resource.NewMilliQuantity(cpuMilli, resource.DecimalSI)
-			memLimit = *resource.NewQuantity(memBytes, resource.BinarySI)
-			container.Resources.Limits = corev1.ResourceList{
-				corev1.ResourceCPU:    cpuLimit,
-				corev1.ResourceMemory: memLimit,
-			}
-		}
-		if withRequests {
-			container.Resources.Requests = corev1.ResourceList{
-				corev1.ResourceCPU:    *resource.NewMilliQuantity(1, resource.DecimalSI),
-				corev1.ResourceMemory: *resource.NewQuantity(1, resource.BinarySI),
-			}
-		}
+		original, limits := in.container()
+		containers := []corev1.Container{original}
+		mutateContainers(containers, in.cpuRatio, in.memRatio)
 
-		containers := []corev1.Container{container}
-		mutateContainers(containers, cpuRatio, memRatio)
-
-		requests := containers[0].Resources.Requests
-		if !withLimits {
-			// No limits means no overcommit: requests must be left untouched.
-			if len(requests) != len(container.Resources.Requests) {
-				t.Fatalf("requests changed without limits: %v", requests)
-			}
-			return
-		}
-
-		if cpuRatio == 1 && memRatio == 1 {
-			// A ratio of 1 is a no-op and must not invent request entries.
-			if _, ok := requests[corev1.ResourceCPU]; ok && !withRequests {
-				t.Fatalf("cpu request created for ratio 1: %v", requests)
-			}
-			return
-		}
-
-		if cpuRatio != 1 {
-			cpuReq, ok := requests[corev1.ResourceCPU]
-			if !ok {
-				t.Fatalf("cpu request missing for ratio %v", cpuRatio)
-			}
-			if got, limit := cpuReq.MilliValue(), cpuLimit.MilliValue(); got < 0 || got > limit {
-				t.Fatalf("cpu request out of bounds: got %d, limit %d, ratio %v", got, limit, cpuRatio)
-			}
-		}
-		if memRatio != 1 {
-			memReq, ok := requests[corev1.ResourceMemory]
-			if !ok {
-				t.Fatalf("memory request missing for ratio %v", memRatio)
-			}
-			if got, limit := memReq.Value(), memLimit.Value(); got < 0 || got > limit {
-				t.Fatalf("memory request out of bounds: got %d, limit %d, ratio %v", got, limit, memRatio)
-			}
-		}
+		assertRequests(t, containers[0].Resources.Requests, original.Resources.Requests, limits, in)
 	})
+}
+
+// assertRequests checks the invariants of mutateContainers on a single container.
+func assertRequests(t *testing.T, got, before, limits corev1.ResourceList, in fuzzInput) {
+	t.Helper()
+
+	if !in.withLimits {
+		// Without limits there is nothing to overcommit: requests must not move.
+		if !reflect.DeepEqual(got, before) {
+			t.Fatalf("requests changed without limits: got %v, want %v", got, before)
+		}
+		return
+	}
+
+	assertResource(t, corev1.ResourceCPU, got, before, limits[corev1.ResourceCPU], in.cpuRatio)
+	assertResource(t, corev1.ResourceMemory, got, before, limits[corev1.ResourceMemory], in.memRatio)
+}
+
+// assertResource checks one resource: a ratio of 1 is a no-op, any other ratio
+// produces a request in [0, limit].
+func assertResource(t *testing.T, key corev1.ResourceName, got, before corev1.ResourceList, limit resource.Quantity, ratio float64) {
+	t.Helper()
+
+	req, present := got[key]
+	prev, hadPrev := before[key]
+
+	if ratio == 1 {
+		if hadPrev && (!present || prev.Cmp(req) != 0) {
+			t.Fatalf("%s request changed for ratio 1: got %v, want %v", key, req.String(), prev.String())
+		}
+		return
+	}
+
+	if !present {
+		t.Fatalf("%s request missing for ratio %v", key, ratio)
+	}
+	if req.Sign() < 0 || req.Cmp(limit) > 0 {
+		t.Fatalf("%s request out of bounds: got %s, limit %s, ratio %v", key, req.String(), limit.String(), ratio)
+	}
 }
