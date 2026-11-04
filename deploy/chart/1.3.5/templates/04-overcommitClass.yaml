@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2025 2025 INDUSTRIA DE DISEÑO TEXTIL S.A. (INDITEX S.A.)
+# SPDX-FileContributor: enriqueavi@inditex.com
+#
+# SPDX-License-Identifier: Apache-2.0
+
+{{ if $.Values.createClasses}}
+---
+apiVersion: overcommit.inditex.dev/v1alphav1
+kind: OvercommitClass
+metadata:
+  name: high
+spec:
+  cpuOvercommit: 0.1
+  memoryOvercommit: 0.8
+  isDefault: false
+  excludedNamespaces: "{{ .Values.overcommit.excludedNamespaces }}"
+  labels:
+    example.com/label: "true"
+  annotations:
+    example.com/annotation: "true"
+  {{- if .Values.overcommit.nodeSelector }}
+  nodeSelector:
+  {{- toYaml .Values.overcommit.nodeSelector | nindent 4 }}
+  {{- end }}
+  {{- if .Values.overcommit.tolerations }}
+  tolerations:
+  {{- toYaml .Values.overcommit.tolerations | nindent 4 }}
+  {{- end }}
+---
+apiVersion: overcommit.inditex.dev/v1alphav1
+kind: OvercommitClass
+metadata:
+  name: low
+spec:
+  cpuOvercommit: 0.8
+  memoryOvercommit: 1
+  isDefault: false
+  excludedNamespaces: "{{ .Values.overcommit.excludedNamespaces }}"
+  labels:
+    example.com/label: "true"
+  annotations:
+    example.com/annotation: "true"
+  {{- if .Values.overcommit.nodeSelector }}
+  nodeSelector:
+  {{- toYaml .Values.overcommit.nodeSelector | nindent 4 }}
+  {{- end }}
+  {{- if .Values.overcommit.tolerations }}
+  tolerations:
+  {{- toYaml .Values.overcommit.tolerations | nindent 4 }}
+  {{- end }}
+{{- end }}
