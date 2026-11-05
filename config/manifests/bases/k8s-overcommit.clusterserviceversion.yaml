@@ -73,7 +73,7 @@ spec:
   - name: Blog Post
     url: https://medium.com/@InditexTech/when-is-a-cluster-really-full-unlocking-hidden-capacity-with-the-k8s-overcommit-operator-9fd75af95712
   maintainers:
-  - email: k8s-overcommit-maintainers@inditex.com
+  - email: lddinfrapaas@inditex.com
     name: Enrique Andrés Villar
   maturity: alpha
   minKubeVersion: 1.22.0
