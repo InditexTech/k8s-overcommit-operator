@@ -8,7 +8,10 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.3.4
+VERSION ?= 1.3.5
+
+# First OCP release carrying the Kubernetes minor the operator needs (1.28 = OCP 4.15).
+OPENSHIFT_VERSIONS ?= v4.15
 # Image URL to use all building/pushing image targets
 IMG ?= ghcr.io/inditextech/k8s-overcommit-operator:$(VERSION)
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
@@ -279,6 +282,12 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
+	# operator-sdk does not carry the OpenShift catalog annotation from the CSV into the
+	# bundle metadata, so it is injected here to survive regeneration.
+	grep -q 'com.redhat.openshift.versions' bundle/metadata/annotations.yaml || \
+		sed -i '/^annotations:/a\  com.redhat.openshift.versions: $(OPENSHIFT_VERSIONS)' bundle/metadata/annotations.yaml
+	grep -q 'com.redhat.openshift.versions' bundle.Dockerfile || \
+		sed -i '/^FROM scratch/a LABEL com.redhat.openshift.versions=$(OPENSHIFT_VERSIONS)' bundle.Dockerfile
 	$(OPERATOR_SDK) bundle validate ./bundle
 	mkdir -p deploy/olm/$(VERSION)
 	cp -r bundle/manifests/* deploy/olm/$(VERSION)/

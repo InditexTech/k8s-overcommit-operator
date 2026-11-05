@@ -6,4 +6,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: overcommitclass-sample
 spec:
-  # TODO(user): Add fields here
+  cpuOvercommit: 0.5
+  memoryOvercommit: 0.8
+  isDefault: false
+  excludedNamespaces: ".*(kube|openshift|k8s-overcommit).*"
