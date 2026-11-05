@@ -1,4 +1,5 @@
 FROM scratch
+LABEL com.redhat.openshift.versions=v4.15
 
 # Core bundle labels.
 LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1

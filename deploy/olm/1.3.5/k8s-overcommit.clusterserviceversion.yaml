@@ -38,6 +38,7 @@ metadata:
       ]
     capabilities: Basic Install
     categories: OpenShift Optional
+    com.redhat.openshift.versions: v4.15
     containerImage: ghcr.io/inditextech/k8s-overcommit-operator:1.3.5
     createdAt: "2026-11-04T15:31:00Z"
     description: Lower pod resource requests from declarative overcommit classes,
@@ -333,7 +334,7 @@ spec:
   - email: lddinfrapaas@inditex.com
     name: Enrique Andrés Villar
   maturity: alpha
-  minKubeVersion: 1.22.0
+  minKubeVersion: 1.28.0
   provider:
     name: InditexTech
     url: https://github.com/InditexTech
