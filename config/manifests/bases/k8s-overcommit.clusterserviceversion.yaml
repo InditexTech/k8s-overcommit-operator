@@ -40,7 +40,7 @@ spec:
     - Idempotent mutation: pods already processed by a class are skipped on re-admission.
 
     ### Prerequisites
-    - cert-manager is mandatory: the operator issues a Certificate and an Issuer for every overcommit class, and without them the generated mutating webhooks never get a serving certificate. The bundle declares it as an OLM dependency on cert-manager.io/v1 (Certificate, Issuer), so OLM installs cert-manager when no operator provides that API.
+    - cert-manager is mandatory: the operator creates one self-signed Issuer and a Certificate per overcommit class, and without them the generated webhooks never get a serving certificate. The bundle declares it as an OLM dependency on cert-manager.io/v1 (Certificate, Issuer), so OLM installs cert-manager when no operator provides that API.
     - The operator installs cluster-wide (AllNamespaces) and creates MutatingWebhookConfigurations.
   displayName: K8s Overcommit Operator
   icon:
