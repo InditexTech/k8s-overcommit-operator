@@ -39,24 +39,28 @@ metadata:
     capabilities: Basic Install
     categories: OpenShift Optional
     com.redhat.openshift.versions: v4.15
-    containerImage: ghcr.io/inditextech/k8s-overcommit-operator:1.3.5
-    createdAt: "2026-11-04T15:31:00Z"
+    containerImage: ghcr.io/inditextech/k8s-overcommit-operator:1.3.6
+    createdAt: "2026-11-06T13:20:22Z"
     description: Lower pod resource requests from declarative overcommit classes,
       so the scheduler can pack more workloads per node.
     operators.operatorframework.io/builder: operator-sdk-v1.42.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/InditexTech/k8s-overcommit-operator
     support: https://github.com/InditexTech/k8s-overcommit-operator/issues
-  name: k8s-overcommit.v1.3.5
+  name: k8s-overcommit.v1.3.6
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - kind: OvercommitClass
+    - description: OvercommitClass is the Schema for the overcommitclasses API
+      displayName: Overcommit Class
+      kind: OvercommitClass
       name: overcommitclasses.overcommit.inditex.dev
       version: v1alphav1
-    - kind: Overcommit
+    - description: Overcommit is the Schema for the overcommits API
+      displayName: Overcommit
+      kind: Overcommit
       name: overcommits.overcommit.inditex.dev
       version: v1alphav1
   description: |
@@ -238,7 +242,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: ghcr.io/inditextech/k8s-overcommit-operator:1.3.5
+                image: ghcr.io/inditextech/k8s-overcommit-operator:1.3.6
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -325,7 +329,7 @@ spec:
   - resources
   links:
   - name: K8s Overcommit Operator Documentation
-    url: https://github.com/InditexTech/k8s-overcommit-operator/tree/1.3.5/docs
+    url: https://github.com/InditexTech/k8s-overcommit-operator/tree/1.3.6/docs
   - name: K8s Overcommit Operator Source Code
     url: https://github.com/InditexTech/k8s-overcommit-operator
   - name: Blog Post
@@ -333,9 +337,10 @@ spec:
   maintainers:
   - email: lddinfrapaas@inditex.com
     name: Enrique Andrés Villar
-  maturity: alpha
+  maturity: stable
   minKubeVersion: 1.28.0
   provider:
     name: InditexTech
     url: https://github.com/InditexTech
-  version: 1.3.5
+  replaces: k8s-overcommit.v1.3.5
+  version: 1.3.6
