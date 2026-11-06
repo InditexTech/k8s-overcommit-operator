@@ -8,7 +8,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.3.5
+VERSION ?= 1.3.6
 
 # First OCP release carrying the Kubernetes minor the operator needs (1.28 = OCP 4.15).
 OPENSHIFT_VERSIONS ?= v4.15
@@ -24,6 +24,12 @@ IMAGE_TAG_BASE ?= ghcr.io/inditextech/k8s-overcommit-operator
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:$(VERSION)
+# Channels published to the catalogs. `stable` is the default channel so new
+# installs do not land on `alpha`. `alpha` is still declared while 1.3.5 is the
+# previous bundle, so the upgrade edge stays inside a single channel.
+CHANNELS ?= alpha,stable
+DEFAULT_CHANNEL ?= stable
+
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
