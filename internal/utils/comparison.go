@@ -7,6 +7,7 @@ package utils
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +62,7 @@ func createTolerationKey(tol corev1.Toleration) string {
 	parts = append(parts, string(tol.Effect))
 
 	if tol.TolerationSeconds != nil {
-		parts = append(parts, "seconds-not-nil")
+		parts = append(parts, "seconds-"+strconv.FormatInt(*tol.TolerationSeconds, 10))
 	} else {
 		parts = append(parts, "seconds-nil")
 	}
