@@ -1,0 +1,25 @@
+.github/workflows/code-gomod_go-sonarcloud-analysis.yml
+  s_321a66447d8185::t_54c6d5434e878c 132
+.github/workflows/pr-verify.yml
+  s_321a66447d8185::t_8ff03eb81c1010 31
+.github/workflows/push-verify.yml
+  s_321a66447d8185::t_d9591f7473d677 32
+.github/workflows/scorecard-analysis.yml
+  s_321a66447d8185::t_39ddd5a0b505da 69,96,101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "0f607abed5b08c9787c99502eaf9d184dfc4b7e0",
+  "prompts": {},
+  "sessions": {
+    "s_321a66447d8185": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "3072a309-82b1-40ea-8573-367fb4af9c8f",
+        "model": "claude-sonnet-5.5"
+      },
+      "human_author": "Ivan Alvarez Sabin <ivanasabi@inditex.com>"
+    }
+  }
+}
