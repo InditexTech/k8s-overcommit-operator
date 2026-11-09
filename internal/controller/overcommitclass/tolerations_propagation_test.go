@@ -64,13 +64,6 @@ var _ = Describe("OvercommitClass Controller", func() {
 		}
 
 		BeforeEach(func() {
-			// The namespace is also created by the other specs; tolerate it being
-			// there already.
-			namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: os.Getenv("POD_NAMESPACE")}}
-			if err := k8sClient.Create(ctx, namespace); err != nil && !apierrors.IsAlreadyExists(err) {
-				Expect(err).NotTo(HaveOccurred())
-			}
-
 			// A previous spec may have left the class behind.
 			existing := &overcommitv1.OvercommitClass{ObjectMeta: metav1.ObjectMeta{Name: className}}
 			err := k8sClient.Get(ctx, client.ObjectKey{Name: className}, existing)

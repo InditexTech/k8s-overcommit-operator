@@ -30,12 +30,6 @@ var _ = Describe("OvercommitClass Controller", func() {
 					Name: "test",
 				},
 			})).To(Succeed())
-
-			Expect(k8sClient.Delete(ctx, &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: os.Getenv("POD_NAMESPACE"),
-				},
-			})).To(Succeed())
 		})
 
 		It("Should create dependent resources", func() {
@@ -51,13 +45,6 @@ var _ = Describe("OvercommitClass Controller", func() {
 					ExcludedNamespaces: "kube-system",
 				},
 			}
-
-			// Create the namespace
-			Expect(k8sClient.Create(ctx, &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: os.Getenv("POD_NAMESPACE"),
-				},
-			}))
 
 			// Create the OvercommitClass resource
 			Expect(k8sClient.Create(ctx, overcommitClass)).To(Succeed())

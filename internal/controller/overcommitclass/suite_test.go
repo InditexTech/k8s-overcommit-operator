@@ -18,6 +18,8 @@ import (
 	. "github.com/onsi/gomega"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -113,6 +115,15 @@ var _ = BeforeSuite(func() {
 
 	os.Setenv("POD_NAMESPACE", "k8s-overcommit")
 	os.Setenv("LABEL_OVERCOMMIT_CLASS", "test")
+
+	// Every spec in the suite creates its resources in POD_NAMESPACE, so it is
+	// created once here and never deleted: envtest runs no namespace controller, so
+	// a deleted namespace stays in Terminating for the rest of the run and any spec
+	// that needs it afterwards fails depending on Ginkgo's random order.
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: os.Getenv("POD_NAMESPACE")}}
+	if err := k8sClient.Create(context.TODO(), namespace); err != nil && !apierrors.IsAlreadyExists(err) {
+		Expect(err).NotTo(HaveOccurred())
+	}
 
 	go func() {
 		defer GinkgoRecover()
