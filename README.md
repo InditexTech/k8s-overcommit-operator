@@ -50,6 +50,22 @@ The **k8s-overcommit Operator** is a Kubernetes operator designed to intelligent
 
 ---
 
+## 📦 Where to find it
+
+The operator is published in the community OLM catalogs, so it can be installed without
+cloning this repository:
+
+| Catalog | Where it is available | Package | Channels |
+|---------|----------------------|---------|----------|
+| [OperatorHub.io](https://operatorhub.io/operator/k8s-overcommit) | Any Kubernetes cluster running OLM | `k8s-overcommit` | `stable` (default), `alpha` |
+| [OpenShift community operators](https://github.com/redhat-openshift-ecosystem/community-operators-prod) | OpenShift 4.15 and later, through the embedded OperatorHub | `k8s-overcommit` | `stable` (default), `alpha` |
+| [Project catalog](./deploy/catalog_source.yaml) | Any Kubernetes cluster running OLM, catalog published from this repository | `k8s-overcommit` | `stable` (default), `alpha` |
+
+On a disconnected cluster, mirror the catalog image into your own registry before
+installing; the operator image and cert-manager have to be mirrored as well.
+
+---
+
 ## 🚀 Quick Start
 
 ### 🎯 Method 1: Helm Installation (Recommended)
@@ -73,7 +89,7 @@ deployment:
   image:
     registry: ghcr.io
     image: inditextech/k8s-overcommit-operator
-    tag: 1.3.4
+    tag: 1.3.6
 ```
 
 #### 3️⃣ Install with Helm
@@ -86,51 +102,66 @@ helm install k8s-overcommit-operator chart
 
 ### 🔧 Method 2: OLM Installation
 
-#### 1️⃣ Install the CatalogSource
+#### Option A: From the community catalogs (recommended)
 
-For OpenShift or clusters with OLM installed, apply the catalog source:
+The operator is published in the community OLM catalogs, so there is nothing to clone: on
+OpenShift 4.15 or later it is part of the embedded OperatorHub, and on upstream OLM
+clusters it comes from OperatorHub.io.
 
-```bash
-kubectl apply -f https://raw.githubusercontent.com/InditexTech/k8s-overcommit-operator/refs/heads/main/deploy/catalog_source.yaml
-```
-
-#### 2️⃣ Apply the OperatorGroup
-
-Apply the operator group configuration:
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/InditexTech/k8s-overcommit-operator/refs/heads/main/deploy/operator_group.yaml
-```
-
-#### 3️⃣ Create the Subscription (Alternative)
-
-You can create your own subscription or use the default [`subscription.yaml`](../deploy/subscription.yaml). Below is an example:
+Create the Subscription:
 
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: k8s-overcommit-operator
-  namespace: operators
+  name: k8s-overcommit
+  namespace: openshift-operators
 spec:
-  channel: alpha
-  name: k8s-overcommit-operator
+  channel: stable
+  name: k8s-overcommit
   source: community-operators
-  sourceNamespace: olm
+  sourceNamespace: openshift-marketplace
 ```
 
-Apply the subscription:
+`community-operators` in `openshift-marketplace` is the OpenShift catalog. On clusters that
+consume OperatorHub.io instead, use `source: operatorhubio-catalog` and
+`sourceNamespace: olm`. In the web console it is the same thing through
+**Operators → OperatorHub**, searching for "K8s Overcommit".
+
+#### Option B: From this repository's own catalog
+
+Use this when you want the catalog published by this project instead of the community one.
+
+**1. Install the CatalogSource**
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/InditexTech/k8s-overcommit-operator/refs/heads/main/deploy/catalog_source.yaml
+```
+
+**2. Apply the OperatorGroup**
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/InditexTech/k8s-overcommit-operator/refs/heads/main/deploy/operator_group.yaml
+```
+
+**3. Create the Subscription**
+
+The repository ships a working Subscription in
+[`deploy/subscription.yaml`](../deploy/subscription.yaml); apply it with:
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/InditexTech/k8s-overcommit-operator/refs/heads/main/deploy/subscription.yaml
 ```
 
-#### 4️⃣ Validation
+#### Validation
 
-After installation, validate that the operator is running:
+After installation, check that the CSV reached `Succeeded` and that the operator pod is
+running (the namespace is `openshift-operators` with Option A and `k8s-overcommit` with
+Option B):
 
 ```bash
-kubectl get pods -n k8s-overcommit
+kubectl get csv -A | grep k8s-overcommit
+kubectl get pods -A | grep k8s-overcommit
 ```
 
 
