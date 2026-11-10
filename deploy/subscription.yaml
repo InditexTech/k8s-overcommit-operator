@@ -4,7 +4,7 @@ metadata:
   name: k8s-overcommit
   namespace: k8s-overcommit
 spec:
-  channel: alpha
+  channel: stable
   name: k8s-overcommit
   source: k8s-overcommit-operator-catalog
   sourceNamespace: olm
