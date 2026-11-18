@@ -30,6 +30,10 @@ spec:
       jsonPath: .spec.isDefault
       name: Default
       type: boolean
+    - description: Webhook failure policy
+      jsonPath: .spec.failurePolicy
+      name: FailurePolicy
+      type: string
     name: v1alphav1
     schema:
       openAPIV3Schema:
@@ -64,6 +68,17 @@ spec:
                 minimum: 0.0001
                 type: number
               excludedNamespaces:
+                type: string
+              failurePolicy:
+                default: Fail
+                description: |-
+                  FailurePolicy defines how unrecognized errors and timeout errors from the
+                  mutating admission webhook are handled. Allowed values are "Ignore" or "Fail".
+                  "Ignore" means the pod is admitted without overcommit mutation when the webhook
+                  fails; "Fail" means the pod creation is rejected.
+                enum:
+                - Ignore
+                - Fail
                 type: string
               isDefault:
                 default: false

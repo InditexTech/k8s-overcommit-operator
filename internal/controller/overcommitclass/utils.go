@@ -120,6 +120,15 @@ func slicesEqual(a, b []string) bool {
 	return true
 }
 
+// failurePolicyEqual compares two failure policy pointers, treating nil as a
+// distinct value from any explicit policy.
+func failurePolicyEqual(updated, current *admissionv1.FailurePolicyType) bool {
+	if updated == nil || current == nil {
+		return updated == current
+	}
+	return *updated == *current
+}
+
 // webhookChanged checks if a webhook configuration has changed
 func webhookChanged(updated, current interface{}) bool {
 	// Type assertion to MutatingWebhook
@@ -160,6 +169,12 @@ func webhookChanged(updated, current interface{}) bool {
 		if i >= len(currentWebhook.AdmissionReviewVersions) || version != currentWebhook.AdmissionReviewVersions[i] {
 			return true
 		}
+	}
+
+	// Compare failure policy so that editing it on the class is propagated to the
+	// already existing MutatingWebhookConfiguration
+	if !failurePolicyEqual(updatedWebhook.FailurePolicy, currentWebhook.FailurePolicy) {
+		return true
 	}
 
 	// Compare MatchConditions (including CEL expressions for namespace exclusion)

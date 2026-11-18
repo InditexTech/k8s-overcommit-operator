@@ -201,10 +201,21 @@ func getObjectSelector(isDefault bool, label string, name string) *metav1.LabelS
 	}
 }
 
+// getFailurePolicy maps the failure policy declared on the OvercommitClass to the
+// admission configuration value. An empty value is treated as Fail so that classes
+// created before the field existed keep the previous behaviour even when the CRD
+// default has not been persisted yet.
+func getFailurePolicy(class overcommit.OvercommitClass) admissionv1.FailurePolicyType {
+	if class.Spec.FailurePolicy == overcommit.FailurePolicyIgnore {
+		return admissionv1.Ignore
+	}
+	return admissionv1.Fail
+}
+
 func CreateMutatingWebhookConfiguration(class overcommit.OvercommitClass, svc corev1.Service, cert certmanager.Certificate, label string) *admissionv1.MutatingWebhookConfiguration {
 	var path = "/mutate--v1-pod"
 	var scope = admissionv1.NamespacedScope
-	var policy = admissionv1.Fail
+	var policy = getFailurePolicy(class)
 	var sideEffect = admissionv1.SideEffectClassNone
 	var reinvocationPolicy = admissionv1.IfNeededReinvocationPolicy
 

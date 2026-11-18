@@ -144,6 +144,7 @@ spec:
   memoryOvercommit: 0.8
   isDefault: true
   excludedNamespaces: ".*(^(openshift|k8s-overcommit|kube).*).*"
+  failurePolicy: Fail
   labels:
     example: "label"
   annotations:
@@ -156,6 +157,7 @@ spec:
 - `memoryOvercommit`: Ratio of memory requests to limits (0.0-1.0)
 - `isDefault`: Whether this class is used when no specific class is found
 - `excludedNamespaces`: Regex pattern for namespaces to exclude
+- `failurePolicy`: What the mutating webhook does when it cannot be reached — `Fail` (default, the pod is rejected) or `Ignore` (the pod is admitted without overcommit). Reconciled into the class `MutatingWebhookConfiguration`
 - `labels`: Labels applied to generated resources
 - `annotations`: Annotations applied to generated resources
 
