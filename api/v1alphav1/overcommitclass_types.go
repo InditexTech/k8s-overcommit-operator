@@ -13,6 +13,19 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// FailurePolicyType defines how the mutating admission webhook handles
+// unrecognized errors and timeout errors.
+// +kubebuilder:validation:Enum=Ignore;Fail
+type FailurePolicyType string
+
+const (
+	// FailurePolicyIgnore admits the pod without overcommit mutation when the
+	// webhook call fails.
+	FailurePolicyIgnore FailurePolicyType = "Ignore"
+	// FailurePolicyFail rejects the pod creation when the webhook call fails.
+	FailurePolicyFail FailurePolicyType = "Fail"
+)
+
 // OvercommitClassSpec defines the desired state of OvercommitClass
 type OvercommitClassSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -29,9 +42,16 @@ type OvercommitClassSpec struct {
 	// +kubebuilder:validation:Required
 	ExcludedNamespaces string `json:"excludedNamespaces,omitempty"`
 	// +kubebuilder:default=false
-	IsDefault   bool              `json:"isDefault,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	Annotations map[string]string `json:"annotations,omitempty"`
+	IsDefault bool `json:"isDefault,omitempty"`
+	// FailurePolicy defines how unrecognized errors and timeout errors from the
+	// mutating admission webhook are handled. Allowed values are "Ignore" or "Fail".
+	// "Ignore" means the pod is admitted without overcommit mutation when the webhook
+	// fails; "Fail" means the pod creation is rejected.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=Fail
+	FailurePolicy FailurePolicyType  `json:"failurePolicy,omitempty"`
+	Labels        map[string]string  `json:"labels,omitempty"`
+	Annotations   map[string]string  `json:"annotations,omitempty"`
 	// +kubebuilder:validation:Optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// +kubebuilder:validation:Optional
@@ -57,6 +77,7 @@ type OvercommitClassStatus struct {
 // +kubebuilder:printcolumn:name="CPU",type=number,JSONPath=".spec.cpuOvercommit",description="CPU overcommit ratio"
 // +kubebuilder:printcolumn:name="Memory",type=number,JSONPath=".spec.memoryOvercommit",description="Memory overcommit ratio"
 // +kubebuilder:printcolumn:name="Default",type=boolean,JSONPath=".spec.isDefault",description="Is default overcommit class"
+// +kubebuilder:printcolumn:name="FailurePolicy",type=string,JSONPath=".spec.failurePolicy",description="Webhook failure policy"
 
 // OvercommitClass is the Schema for the overcommitclasses API
 type OvercommitClass struct {

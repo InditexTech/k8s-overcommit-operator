@@ -11,6 +11,8 @@ import (
 	"time"
 
 	overcommit "github.com/InditexTech/k8s-overcommit-operator/api/v1alphav1"
+	certmanager "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -138,5 +140,99 @@ func TestResourceMustParse(t *testing.T) {
 	cpu := resourceMustParse("250m")
 	if cpu.String() != "250m" {
 		t.Errorf("Expected '250m', got '%s'", cpu.String())
+	}
+}
+
+func TestCreateMutatingWebhookConfigurationFailurePolicy(t *testing.T) {
+	os.Setenv("POD_NAMESPACE", "test-namespace")
+
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-class-webhook-service",
+			Namespace: "test-namespace",
+		},
+	}
+	certificate := &certmanager.Certificate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-class-webhook-certificate",
+			Namespace: "test-namespace",
+		},
+	}
+
+	tests := []struct {
+		name          string
+		failurePolicy overcommit.FailurePolicyType
+		isDefault     bool
+		expected      admissionv1.FailurePolicyType
+	}{
+		{
+			name:          "Unset failure policy keeps the strict default",
+			failurePolicy: "",
+			expected:      admissionv1.Fail,
+		},
+		{
+			name:          "Explicit Fail",
+			failurePolicy: overcommit.FailurePolicyFail,
+			expected:      admissionv1.Fail,
+		},
+		{
+			name:          "Explicit Ignore",
+			failurePolicy: overcommit.FailurePolicyIgnore,
+			expected:      admissionv1.Ignore,
+		},
+		{
+			name:          "Default class with Ignore applies it to every generated webhook",
+			failurePolicy: overcommit.FailurePolicyIgnore,
+			isDefault:     true,
+			expected:      admissionv1.Ignore,
+		},
+		{
+			name:          "Default class with unset failure policy keeps the strict default",
+			failurePolicy: "",
+			isDefault:     true,
+			expected:      admissionv1.Fail,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			class := overcommit.OvercommitClass{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-class"},
+				Spec: overcommit.OvercommitClassSpec{
+					CpuOvercommit:      0.5,
+					MemoryOvercommit:   0.5,
+					ExcludedNamespaces: "kube-system",
+					IsDefault:          tt.isDefault,
+					FailurePolicy:      tt.failurePolicy,
+				},
+			}
+
+			webhookConfig := CreateMutatingWebhookConfiguration(class, *service, *certificate, "inditex.com/overcommit-class")
+
+			expectedWebhooks := 1
+			if tt.isDefault {
+				expectedWebhooks = 2
+			}
+			assertFailurePolicy(t, webhookConfig, expectedWebhooks, tt.expected)
+		})
+	}
+}
+
+// assertFailurePolicy checks that every webhook generated for a class carries the
+// expected failure policy.
+func assertFailurePolicy(t *testing.T, webhookConfig *admissionv1.MutatingWebhookConfiguration, expectedWebhooks int, expected admissionv1.FailurePolicyType) {
+	t.Helper()
+
+	if len(webhookConfig.Webhooks) != expectedWebhooks {
+		t.Fatalf("Expected %d webhooks, got %d", expectedWebhooks, len(webhookConfig.Webhooks))
+	}
+
+	for _, webhook := range webhookConfig.Webhooks {
+		if webhook.FailurePolicy == nil {
+			t.Fatalf("Webhook '%s' has no failure policy, expected '%s'", webhook.Name, expected)
+		}
+		if *webhook.FailurePolicy != expected {
+			t.Errorf("Webhook '%s': expected failure policy '%s', got '%s'", webhook.Name, expected, *webhook.FailurePolicy)
+		}
 	}
 }

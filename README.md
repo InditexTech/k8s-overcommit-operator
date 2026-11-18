@@ -201,6 +201,7 @@ spec:
   memoryOvercommit: 0.8     # 80% of limits as requests
   excludedNamespaces: ".*(^(openshift|k8s-overcommit|kube).*).*"
   isDefault: true
+  failurePolicy: Fail       # Fail (default) | Ignore
   labels:
     workload-type: batch
   annotations:
@@ -264,6 +265,28 @@ This excludes:
 - `openshift-*`
 - `k8s-overcommit-*`
 - `kube-*`
+
+### 🚦 Webhook Failure Policy
+
+`failurePolicy` decides what happens to a pod when the mutating webhook cannot be
+reached (timeout, network error, 5xx):
+
+| Value | Behaviour |
+|-------|-----------|
+| `Fail` (default) | The pod creation is **rejected** until the webhook answers again. Loud, and it can block workloads cluster-wide during an operator outage. |
+| `Ignore` | The pod is admitted **without** the overcommit mutation. Scheduling never blocks, but pods created during the outage get no overcommit applied. |
+
+The value is per `OvercommitClass` and is reconciled into the
+`MutatingWebhookConfiguration` the operator generates for that class, so editing it
+on a running cluster takes effect without reinstalling anything.
+
+```yaml
+spec:
+  failurePolicy: Ignore   # keep the cluster schedulable if the webhook goes down
+```
+
+Only `Fail` and `Ignore` are valid; the CRD enforces the enum, so a typo such as
+`fail` fails on `kubectl apply` instead of at reconcile time.
 
 ---
 
