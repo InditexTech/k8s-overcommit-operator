@@ -129,6 +129,42 @@ func failurePolicyEqual(updated, current *admissionv1.FailurePolicyType) bool {
 	return *updated == *current
 }
 
+// clientConfigChanged compares the service the webhook points at.
+func clientConfigChanged(updated, current admissionv1.WebhookClientConfig) bool {
+	if updated.Service == nil || current.Service == nil {
+		return (updated.Service == nil) != (current.Service == nil)
+	}
+	return updated.Service.Name != current.Service.Name ||
+		updated.Service.Namespace != current.Service.Namespace
+}
+
+// admissionReviewVersionsChanged compares the accepted admission review versions.
+func admissionReviewVersionsChanged(updated, current []string) bool {
+	if len(updated) != len(current) {
+		return true
+	}
+	for i, version := range updated {
+		if version != current[i] {
+			return true
+		}
+	}
+	return false
+}
+
+// matchConditionsChanged compares the match conditions, including the CEL
+// expression used for the namespace exclusion.
+func matchConditionsChanged(updated, current []admissionv1.MatchCondition) bool {
+	if len(updated) != len(current) {
+		return true
+	}
+	for i, condition := range updated {
+		if condition.Name != current[i].Name || condition.Expression != current[i].Expression {
+			return true
+		}
+	}
+	return false
+}
+
 // webhookChanged checks if a webhook configuration has changed
 func webhookChanged(updated, current interface{}) bool {
 	// Type assertion to MutatingWebhook
@@ -140,59 +176,12 @@ func webhookChanged(updated, current interface{}) bool {
 		return true
 	}
 
-	// Compare webhook name
-	if updatedWebhook.Name != currentWebhook.Name {
-		return true
-	}
-
-	// Compare rules length
-	if len(updatedWebhook.Rules) != len(currentWebhook.Rules) {
-		return true
-	}
-
-	// Compare client config service
-	if updatedWebhook.ClientConfig.Service != nil && currentWebhook.ClientConfig.Service != nil {
-		if updatedWebhook.ClientConfig.Service.Name != currentWebhook.ClientConfig.Service.Name ||
-			updatedWebhook.ClientConfig.Service.Namespace != currentWebhook.ClientConfig.Service.Namespace {
-			return true
-		}
-	} else if (updatedWebhook.ClientConfig.Service == nil) != (currentWebhook.ClientConfig.Service == nil) {
-		return true
-	}
-
-	// Compare admission review versions
-	if len(updatedWebhook.AdmissionReviewVersions) != len(currentWebhook.AdmissionReviewVersions) {
-		return true
-	}
-
-	for i, version := range updatedWebhook.AdmissionReviewVersions {
-		if i >= len(currentWebhook.AdmissionReviewVersions) || version != currentWebhook.AdmissionReviewVersions[i] {
-			return true
-		}
-	}
-
-	// Compare failure policy so that editing it on the class is propagated to the
-	// already existing MutatingWebhookConfiguration
-	if !failurePolicyEqual(updatedWebhook.FailurePolicy, currentWebhook.FailurePolicy) {
-		return true
-	}
-
-	// Compare MatchConditions (including CEL expressions for namespace exclusion)
-	if len(updatedWebhook.MatchConditions) != len(currentWebhook.MatchConditions) {
-		return true
-	}
-
-	for i, updatedCondition := range updatedWebhook.MatchConditions {
-		if i >= len(currentWebhook.MatchConditions) {
-			return true
-		}
-		currentCondition := currentWebhook.MatchConditions[i]
-		if updatedCondition.Name != currentCondition.Name ||
-			updatedCondition.Expression != currentCondition.Expression {
-			return true
-		}
-	}
-
-	// If we reach here, they're likely the same
-	return false
+	return updatedWebhook.Name != currentWebhook.Name ||
+		len(updatedWebhook.Rules) != len(currentWebhook.Rules) ||
+		clientConfigChanged(updatedWebhook.ClientConfig, currentWebhook.ClientConfig) ||
+		admissionReviewVersionsChanged(updatedWebhook.AdmissionReviewVersions, currentWebhook.AdmissionReviewVersions) ||
+		// The failure policy is compared so that editing it on the class reaches the
+		// already existing MutatingWebhookConfiguration
+		!failurePolicyEqual(updatedWebhook.FailurePolicy, currentWebhook.FailurePolicy) ||
+		matchConditionsChanged(updatedWebhook.MatchConditions, currentWebhook.MatchConditions)
 }

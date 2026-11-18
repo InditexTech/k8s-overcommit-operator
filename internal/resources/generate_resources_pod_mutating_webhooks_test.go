@@ -213,18 +213,26 @@ func TestCreateMutatingWebhookConfigurationFailurePolicy(t *testing.T) {
 			if tt.isDefault {
 				expectedWebhooks = 2
 			}
-			if len(webhookConfig.Webhooks) != expectedWebhooks {
-				t.Fatalf("Expected %d webhooks, got %d", expectedWebhooks, len(webhookConfig.Webhooks))
-			}
-
-			for _, webhook := range webhookConfig.Webhooks {
-				if webhook.FailurePolicy == nil {
-					t.Fatalf("Webhook '%s' has no failure policy, expected '%s'", webhook.Name, tt.expected)
-				}
-				if *webhook.FailurePolicy != tt.expected {
-					t.Errorf("Webhook '%s': expected failure policy '%s', got '%s'", webhook.Name, tt.expected, *webhook.FailurePolicy)
-				}
-			}
+			assertFailurePolicy(t, webhookConfig, expectedWebhooks, tt.expected)
 		})
+	}
+}
+
+// assertFailurePolicy checks that every webhook generated for a class carries the
+// expected failure policy.
+func assertFailurePolicy(t *testing.T, webhookConfig *admissionv1.MutatingWebhookConfiguration, expectedWebhooks int, expected admissionv1.FailurePolicyType) {
+	t.Helper()
+
+	if len(webhookConfig.Webhooks) != expectedWebhooks {
+		t.Fatalf("Expected %d webhooks, got %d", expectedWebhooks, len(webhookConfig.Webhooks))
+	}
+
+	for _, webhook := range webhookConfig.Webhooks {
+		if webhook.FailurePolicy == nil {
+			t.Fatalf("Webhook '%s' has no failure policy, expected '%s'", webhook.Name, expected)
+		}
+		if *webhook.FailurePolicy != expected {
+			t.Errorf("Webhook '%s': expected failure policy '%s', got '%s'", webhook.Name, expected, *webhook.FailurePolicy)
+		}
 	}
 }
